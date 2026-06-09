@@ -57,6 +57,15 @@ zero hallucination, zero token waste on metadata resolution.
 - [ ] 8. **Fix any errors** — If validation fails, correct issues and re-validate
 - [ ] 9. **Deliver** — Present the final JSON to the user
 
+### Text-to-Track Auto-Ingestion (Text Links to DB)
+
+- [ ] 1. **Gather inputs** — Ask the user for track `title`, `description`, `order`, and a raw text block of LeetCode links.
+- [ ] 2. **Extract Slugs** — Use regex (e.g., `leetcode\.com/problems/([a-z0-9-]+)`) to extract slugs from the text.
+- [ ] 3. **Batch Fetch** — Save the slugs/URLs to a temporary file and run `fetch_batch.js` to get metadata.
+- [ ] 4. **Assemble** — Create a valid `track.json` matching the schema exactly.
+- [ ] 5. **Preview** — Present a formatted markdown preview of the track to the user.
+- [ ] 6. **Auto Upload** — Run `node scripts/manage_tracks.js --import track.json --yes` to save the track to MongoDB directly.
+
 ---
 
 ## Pre-Flight Checklist

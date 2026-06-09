@@ -19,6 +19,7 @@ Read [`SKILL.md`](./SKILL.md) for the complete workflow, schema definition, and 
 | `scripts/fetch_problem.js` | Fetch metadata for a single problem | `node scripts/fetch_problem.js two-sum` |
 | `scripts/fetch_batch.js` | Batch fetch from a URL list file | `node scripts/fetch_batch.js urls.md > out.json` |
 | `scripts/validate_track.js` | Validate a track JSON against schema | `node scripts/validate_track.js track.json` |
+| `scripts/manage_tracks.js` | Import tracks to database directly | `node scripts/manage_tracks.js --import track.json --yes` |
 
 ### Critical Rules
 

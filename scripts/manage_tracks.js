@@ -590,6 +590,60 @@ async function showMenu() {
   }
 }
 
+async function autoImportTrack(filePath, skipConfirm) {
+  log.header('AUTO IMPORT TRACK');
+  try {
+    const resolvedPath = path.resolve(filePath);
+    if (!fs.existsSync(resolvedPath)) {
+      log.error(`File does not exist: "${resolvedPath}"`);
+      return false;
+    }
+
+    const fileContent = fs.readFileSync(resolvedPath, 'utf8');
+    let trackData;
+    try {
+      trackData = JSON.parse(fileContent);
+    } catch (err) {
+      log.error(`Invalid JSON formatting: ${err.message}`);
+      return false;
+    }
+
+    const errors = validateTrackData(trackData);
+    if (errors.length > 0) {
+      log.error('Validation failed! Fix the following issues before adding:');
+      errors.forEach(err => console.log(`  - ${C_RED}${err}${C_RESET}`));
+      return false;
+    }
+
+    const stats = getDifficultyStats(trackData.problems);
+    log.info(`Valid Track JSON Loaded!`);
+    console.log(`  Title:       ${log.accent(trackData.title)}`);
+    console.log(`  Description: ${trackData.description}`);
+    console.log(`  Order:       ${trackData.order}`);
+    console.log(`  Problems:    ${log.accent(trackData.problems.length)} [${formatStats(stats)}]`);
+
+    if (!skipConfirm) {
+      const confirm = await askConfirm('Are you sure you want to add this track to the database?');
+      if (!confirm) {
+        log.info('Operation cancelled by user.');
+        return false;
+      }
+    } else {
+      log.info('Skipping confirmation (--yes flag detected).');
+    }
+
+    // Upsert or simple create? The plan just says upload (Add). Let's do create.
+    const newTrack = await Track.create(trackData);
+    log.success(`Successfully added track "${newTrack.title}"!`);
+    console.log(`  ID:        ${newTrack._id}`);
+    console.log(`  Problems:  ${newTrack.problems.length}`);
+    return true;
+  } catch (error) {
+    log.error(`Failed to auto-import track: ${error.message}`);
+    return false;
+  }
+}
+
 async function run() {
   console.log(`\n${C_BOLD}${C_GREEN}===============================================`);
   console.log(`     Welcome to the DSA Roadmap Track Manager   `);
@@ -633,7 +687,18 @@ async function run() {
       log.warn('Database connection disconnected!');
     });
 
-    await showMenu();
+    const args = process.argv.slice(2);
+    const importIndex = args.indexOf('--import');
+    if (importIndex !== -1 && importIndex + 1 < args.length) {
+      const importPath = args[importIndex + 1];
+      const skipConfirm = args.includes('--yes') || args.includes('-y');
+      const success = await autoImportTrack(importPath, skipConfirm);
+      await mongoose.disconnect();
+      rl.close();
+      process.exit(success ? 0 : 1);
+    } else {
+      await showMenu();
+    }
   } catch (err) {
     log.error(`Could not connect to MongoDB: ${err.message}`);
     rl.close();
