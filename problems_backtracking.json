@@ -1,0 +1,56 @@
+[
+  {
+    "title": "Subsets",
+    "titleSlug": "subsets",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/subsets/"
+  },
+  {
+    "title": "Combination Sum",
+    "titleSlug": "combination-sum",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/combination-sum/"
+  },
+  {
+    "title": "Permutations",
+    "titleSlug": "permutations",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/permutations/"
+  },
+  {
+    "title": "Subsets II",
+    "titleSlug": "subsets-ii",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/subsets-ii/"
+  },
+  {
+    "title": "Combination Sum II",
+    "titleSlug": "combination-sum-ii",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/combination-sum-ii/"
+  },
+  {
+    "title": "Word Search",
+    "titleSlug": "word-search",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/word-search/"
+  },
+  {
+    "title": "Palindrome Partitioning",
+    "titleSlug": "palindrome-partitioning",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/palindrome-partitioning/"
+  },
+  {
+    "title": "Letter Combinations of a Phone Number",
+    "titleSlug": "letter-combinations-of-a-phone-number",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/letter-combinations-of-a-phone-number/"
+  },
+  {
+    "title": "N-Queens",
+    "titleSlug": "n-queens",
+    "difficulty": "Hard",
+    "url": "https://leetcode.com/problems/n-queens/"
+  }
+]

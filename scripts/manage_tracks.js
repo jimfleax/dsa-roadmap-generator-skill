@@ -547,6 +547,80 @@ async function handleDeleteTrack() {
   }
 }
 
+async function handleCleanupTests(skipConfirm) {
+  log.header('CLEANUP TEST TRACKS');
+  try {
+    // STRICT QUERY: Only looks for tracks where the title starts with [TEST]
+    const query = {
+      title: { $regex: /^\[TEST\]/ }
+    };
+
+    const tracks = await Track.find(query);
+
+    if (tracks.length === 0) {
+      log.info('No tracks with "[TEST]" prefix found.');
+      return true;
+    }
+
+    const targets = [];
+    for (const t of tracks) {
+      log.info(`Analyzing: ${t.title}...`);
+      
+      // Analyze description for test markers
+      const isTestDesc = /this is a test track|created to verify|testing context/i.test(t.description);
+      
+      if (isTestDesc) {
+        log.success(`  -> CONFIRMED as test data via description analysis.`);
+        targets.push(t);
+      } else {
+        log.warn(`  -> Description check failed. Skipping "${t.title}" to prevent accidental deletion.`);
+      }
+    }
+
+    if (targets.length === 0) {
+      log.info('No tracks met the two-factor safety criteria for deletion.');
+      return true;
+    }
+
+    log.warn(`Found ${log.accent(targets.length)} track(s) verified as safe for removal:`);
+    for (const t of targets) {
+      console.log(`  - ${C_BOLD}${t.title}${C_RESET} (${t.description})`);
+    }
+
+    if (!skipConfirm) {
+      const confirmAll = await askConfirm('Do you want to delete ALL these verified test tracks?');
+      if (confirmAll) {
+        for (const t of targets) {
+          await Track.findByIdAndDelete(t._id);
+          log.success(`Deleted: ${t.title}`);
+        }
+      } else {
+        for (const t of targets) {
+          const confirmEach = await askConfirm(`Delete "${t.title}"?`);
+          if (confirmEach) {
+            await Track.findByIdAndDelete(t._id);
+            log.success(`Deleted: ${t.title}`);
+          } else {
+            log.info(`Skipped: ${t.title}`);
+          }
+        }
+      }
+    } else {
+      log.info('Skipping confirmation (--yes flag detected). Deleting all verified tracks...');
+      for (const t of targets) {
+        await Track.findByIdAndDelete(t._id);
+        log.success(`Deleted: ${t.title}`);
+      }
+    }
+
+    log.success('Cleanup operation completed.');
+    return true;
+  } catch (error) {
+    log.error(`Failed to cleanup test tracks: ${error.message}`);
+    return false;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Main Loop & Connection
 // ---------------------------------------------------------------------------
@@ -559,9 +633,10 @@ async function showMenu() {
     console.log(`  [3] Edit Track`);
     console.log(`  [4] Download Track(s)`);
     console.log(`  [5] Delete Track (with Backup & Double Confirmation)`);
+    console.log(`  [6] Cleanup Test Tracks (GC)`);
     console.log(`  [0] Exit`);
 
-    const choice = (await ask('\nEnter choice (0-5): ')).trim();
+    const choice = (await ask('\nEnter choice (0-6): ')).trim();
     switch (choice) {
       case '1':
         await handleViewTracks();
@@ -578,13 +653,16 @@ async function showMenu() {
       case '5':
         await handleDeleteTrack();
         break;
+      case '6':
+        await handleCleanupTests(false);
+        break;
       case '0':
         log.info('Disconnecting and exiting...');
         await mongoose.disconnect();
         rl.close();
         process.exit(0);
       default:
-        log.warn('Invalid option. Please choose between 0 and 5.');
+        log.warn('Invalid option. Please choose between 0 and 6.');
     }
     await ask('\nPress Enter to return to main menu...');
   }
@@ -606,6 +684,13 @@ async function autoImportTrack(filePath, skipConfirm) {
     } catch (err) {
       log.error(`Invalid JSON formatting: ${err.message}`);
       return false;
+    }
+
+    // Auto-assign order if missing
+    if (trackData.order === undefined || trackData.order === null) {
+      const count = await Track.countDocuments();
+      trackData.order = count + 1;
+      log.info(`Order field missing. Auto-assigned order: ${trackData.order}`);
     }
 
     const errors = validateTrackData(trackData);
@@ -632,11 +717,25 @@ async function autoImportTrack(filePath, skipConfirm) {
       log.info('Skipping confirmation (--yes flag detected).');
     }
 
-    // Upsert or simple create? The plan just says upload (Add). Let's do create.
-    const newTrack = await Track.create(trackData);
-    log.success(`Successfully added track "${newTrack.title}"!`);
-    console.log(`  ID:        ${newTrack._id}`);
-    console.log(`  Problems:  ${newTrack.problems.length}`);
+    // Use findOneAndUpdate with upsert:true for IDEMPOTENCY
+    // This prevents duplicates if the script is run multiple times (e.g. after a timeout)
+    const existingTrack = await Track.findOne({ title: trackData.title });
+    const isNew = !existingTrack;
+
+    const savedTrack = await Track.findOneAndUpdate(
+      { title: trackData.title },
+      trackData,
+      { upsert: true, new: true, runValidators: true }
+    );
+
+    if (isNew) {
+      log.success(`Successfully added NEW track "${savedTrack.title}"!`);
+    } else {
+      log.success(`Successfully UPDATED existing track "${savedTrack.title}" (Idempotent Upsert)!`);
+    }
+
+    console.log(`  ID:        ${savedTrack._id}`);
+    console.log(`  Problems:  ${savedTrack.problems.length}`);
     return true;
   } catch (error) {
     log.error(`Failed to auto-import track: ${error.message}`);
@@ -689,10 +788,18 @@ async function run() {
 
     const args = process.argv.slice(2);
     const importIndex = args.indexOf('--import');
+    const cleanupIndex = args.indexOf('--cleanup-tests');
+
     if (importIndex !== -1 && importIndex + 1 < args.length) {
       const importPath = args[importIndex + 1];
       const skipConfirm = args.includes('--yes') || args.includes('-y');
       const success = await autoImportTrack(importPath, skipConfirm);
+      await mongoose.disconnect();
+      rl.close();
+      process.exit(success ? 0 : 1);
+    } else if (cleanupIndex !== -1) {
+      const skipConfirm = args.includes('--yes') || args.includes('-y');
+      const success = await handleCleanupTests(skipConfirm);
       await mongoose.disconnect();
       rl.close();
       process.exit(success ? 0 : 1);

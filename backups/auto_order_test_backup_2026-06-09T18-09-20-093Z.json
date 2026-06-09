@@ -1,0 +1,18 @@
+{
+  "_id": "6a28514fe14baf4be6d64493",
+  "title": "Auto Order Test",
+  "__v": 0,
+  "createdAt": "2026-06-09T17:45:50.990Z",
+  "description": "test",
+  "order": 23,
+  "problems": [
+    {
+      "title": "Two Sum",
+      "titleSlug": "two-sum",
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/two-sum/",
+      "_id": "6a28514e327d25f25eda4365"
+    }
+  ],
+  "updatedAt": "2026-06-09T17:45:50.990Z"
+}

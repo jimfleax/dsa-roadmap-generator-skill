@@ -1,0 +1,38 @@
+[
+  {
+    "title": "Best Time to Buy and Sell Stock",
+    "titleSlug": "best-time-to-buy-and-sell-stock",
+    "difficulty": "Easy",
+    "url": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/"
+  },
+  {
+    "title": "Longest Substring Without Repeating Characters",
+    "titleSlug": "longest-substring-without-repeating-characters",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/longest-substring-without-repeating-characters/"
+  },
+  {
+    "title": "Longest Repeating Character Replacement",
+    "titleSlug": "longest-repeating-character-replacement",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/longest-repeating-character-replacement/"
+  },
+  {
+    "title": "Permutation in String",
+    "titleSlug": "permutation-in-string",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/permutation-in-string/"
+  },
+  {
+    "title": "Minimum Window Substring",
+    "titleSlug": "minimum-window-substring",
+    "difficulty": "Hard",
+    "url": "https://leetcode.com/problems/minimum-window-substring/"
+  },
+  {
+    "title": "Sliding Window Maximum",
+    "titleSlug": "sliding-window-maximum",
+    "difficulty": "Hard",
+    "url": "https://leetcode.com/problems/sliding-window-maximum/"
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "title": "Rotate Image",
+    "titleSlug": "rotate-image",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/rotate-image/"
+  },
+  {
+    "title": "Spiral Matrix",
+    "titleSlug": "spiral-matrix",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/spiral-matrix/"
+  },
+  {
+    "title": "Set Matrix Zeroes",
+    "titleSlug": "set-matrix-zeroes",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/set-matrix-zeroes/"
+  },
+  {
+    "title": "Happy Number",
+    "titleSlug": "happy-number",
+    "difficulty": "Easy",
+    "url": "https://leetcode.com/problems/happy-number/"
+  },
+  {
+    "title": "Plus One",
+    "titleSlug": "plus-one",
+    "difficulty": "Easy",
+    "url": "https://leetcode.com/problems/plus-one/"
+  },
+  {
+    "title": "Pow(x, n)",
+    "titleSlug": "powx-n",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/powx-n/"
+  },
+  {
+    "title": "Multiply Strings",
+    "titleSlug": "multiply-strings",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/multiply-strings/"
+  },
+  {
+    "title": "Detect Squares",
+    "titleSlug": "detect-squares",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/detect-squares/"
+  }
+]

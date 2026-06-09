@@ -1,0 +1,44 @@
+[
+  {
+    "title": "Kth Largest Element in a Stream",
+    "titleSlug": "kth-largest-element-in-a-stream",
+    "difficulty": "Easy",
+    "url": "https://leetcode.com/problems/kth-largest-element-in-a-stream/"
+  },
+  {
+    "title": "Last Stone Weight",
+    "titleSlug": "last-stone-weight",
+    "difficulty": "Easy",
+    "url": "https://leetcode.com/problems/last-stone-weight/"
+  },
+  {
+    "title": "K Closest Points to Origin",
+    "titleSlug": "k-closest-points-to-origin",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/k-closest-points-to-origin/"
+  },
+  {
+    "title": "Kth Largest Element in an Array",
+    "titleSlug": "kth-largest-element-in-an-array",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/kth-largest-element-in-an-array/"
+  },
+  {
+    "title": "Task Scheduler",
+    "titleSlug": "task-scheduler",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/task-scheduler/"
+  },
+  {
+    "title": "Design Twitter",
+    "titleSlug": "design-twitter",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/design-twitter/"
+  },
+  {
+    "title": "Find Median from Data Stream",
+    "titleSlug": "find-median-from-data-stream",
+    "difficulty": "Hard",
+    "url": "https://leetcode.com/problems/find-median-from-data-stream/"
+  }
+]

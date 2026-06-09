@@ -69,7 +69,11 @@ function validateTrack(track) {
 
   // --- order ---
   if (track.order === undefined || track.order === null) {
-    errors.push({ path: 'order', message: 'Missing. Must be an integer >= 0.', severity: 'error' });
+    errors.push({ 
+      path: 'order', 
+      message: 'Missing. Will be auto-assigned (count + 1) during import.', 
+      severity: 'warning' 
+    });
   } else if (typeof track.order !== 'number' || !Number.isInteger(track.order)) {
     errors.push({ path: 'order', message: `Must be an integer, got: ${JSON.stringify(track.order)}`, severity: 'error' });
   } else if (track.order < 0) {

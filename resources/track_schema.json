@@ -4,7 +4,7 @@
   "title": "DSA Roadmap Track",
   "description": "Schema for a curated DSA roadmap track document compatible with the Track MongoDB model.",
   "type": "object",
-  "required": ["title", "description", "order", "problems"],
+  "required": ["title", "description", "problems"],
   "additionalProperties": false,
   "properties": {
     "title": {

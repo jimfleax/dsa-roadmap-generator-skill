@@ -19,7 +19,11 @@ Read [`SKILL.md`](./SKILL.md) for the complete workflow, schema definition, and 
 | `scripts/fetch_problem.js` | Fetch metadata for a single problem | `node scripts/fetch_problem.js two-sum` |
 | `scripts/fetch_batch.js` | Batch fetch from a URL list file | `node scripts/fetch_batch.js urls.md > out.json` |
 | `scripts/validate_track.js` | Validate a track JSON against schema | `node scripts/validate_track.js track.json` |
-| `scripts/manage_tracks.js` | Import tracks to database directly | `node scripts/manage_tracks.js --import track.json --yes` |
+| `scripts/manage_tracks.js` | Import tracks (Idempotent Upsert) | `node scripts/manage_tracks.js --import track.json --yes` |
+| `scripts/manage_tracks.js` | Cleanup test tracks (Strict GC) | `node scripts/manage_tracks.js --cleanup-tests --yes` |
+| `scripts/db_audit.js` | Database health & duplicate audit | `node scripts/db_audit.js` |
+| `scripts/db_deduplicate.js` | Formal idempotent cleanup | `node scripts/db_deduplicate.js` |
+| `scripts/db_bulk_export.js` | Non-interactive full DB backup | `node scripts/db_bulk_export.js` |
 
 ### Critical Rules
 
@@ -28,6 +32,8 @@ Read [`SKILL.md`](./SKILL.md) for the complete workflow, schema definition, and 
 3. **Always validate** with `validate_track.js` before delivering
 4. **Difficulty must be exactly** `"Easy"`, `"Medium"`, or `"Hard"`
 5. **URLs must be canonical:** `https://leetcode.com/problems/<slug>/`
+6. **Imports are Idempotent:** If a database connection times out, retry safely. `manage_tracks.js` will not create duplicates.
+7. **Test Tracks:** Any track created for testing/verification MUST have a title starting with `[TEST] ` and a description stating: `This is a test track created to verify <purpose>`.
 
 ### Schema
 

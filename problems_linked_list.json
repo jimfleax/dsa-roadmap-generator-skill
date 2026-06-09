@@ -1,0 +1,68 @@
+[
+  {
+    "title": "Reverse Linked List",
+    "titleSlug": "reverse-linked-list",
+    "difficulty": "Easy",
+    "url": "https://leetcode.com/problems/reverse-linked-list/"
+  },
+  {
+    "title": "Merge Two Sorted Lists",
+    "titleSlug": "merge-two-sorted-lists",
+    "difficulty": "Easy",
+    "url": "https://leetcode.com/problems/merge-two-sorted-lists/"
+  },
+  {
+    "title": "Reorder List",
+    "titleSlug": "reorder-list",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/reorder-list/"
+  },
+  {
+    "title": "Remove Nth Node From End of List",
+    "titleSlug": "remove-nth-node-from-end-of-list",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/remove-nth-node-from-end-of-list/"
+  },
+  {
+    "title": "Copy List with Random Pointer",
+    "titleSlug": "copy-list-with-random-pointer",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/copy-list-with-random-pointer/"
+  },
+  {
+    "title": "Add Two Numbers",
+    "titleSlug": "add-two-numbers",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/add-two-numbers/"
+  },
+  {
+    "title": "Linked List Cycle",
+    "titleSlug": "linked-list-cycle",
+    "difficulty": "Easy",
+    "url": "https://leetcode.com/problems/linked-list-cycle/"
+  },
+  {
+    "title": "Find the Duplicate Number",
+    "titleSlug": "find-the-duplicate-number",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/find-the-duplicate-number/"
+  },
+  {
+    "title": "LRU Cache",
+    "titleSlug": "lru-cache",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/lru-cache/"
+  },
+  {
+    "title": "Merge k Sorted Lists",
+    "titleSlug": "merge-k-sorted-lists",
+    "difficulty": "Hard",
+    "url": "https://leetcode.com/problems/merge-k-sorted-lists/"
+  },
+  {
+    "title": "Reverse Nodes in k-Group",
+    "titleSlug": "reverse-nodes-in-k-group",
+    "difficulty": "Hard",
+    "url": "https://leetcode.com/problems/reverse-nodes-in-k-group/"
+  }
+]

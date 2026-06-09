@@ -47,24 +47,42 @@ zero hallucination, zero token waste on metadata resolution.
 
 ### Batch Generation (Full Track)
 
-- [ ] 1. **Gather inputs** — User provides: track title, description, order number, and a source of problem URLs (markdown file, text list, or inline URLs)
+- [ ] 1. **Gather inputs** — User provides: track title, description, optional order number, and a source of problem URLs (markdown file, text list, or inline URLs)
 - [ ] 2. **Validate inputs** — Run the Pre-Flight Checklist (see below)
 - [ ] 3. **Save URLs to a file** if not already in one
 - [ ] 4. **Run batch fetch** — `node scripts/fetch_batch.js ./urls.md > problems.json`
 - [ ] 5. **Check for failures** — If `_failures.json` exists, report to user for resolution
-- [ ] 6. **Assemble track** — Wrap the problems array with track metadata (title, description, order)
+- [ ] 6. **Assemble track** — Wrap the problems array with track metadata (title, description). `order` is optional and defaults to total tracks + 1.
 - [ ] 7. **Validate** — `node scripts/validate_track.js ./track.json`
 - [ ] 8. **Fix any errors** — If validation fails, correct issues and re-validate
 - [ ] 9. **Deliver** — Present the final JSON to the user
 
 ### Text-to-Track Auto-Ingestion (Text Links to DB)
 
-- [ ] 1. **Gather inputs** — Ask the user for track `title`, `description`, `order`, and a raw text block of LeetCode links.
+- [ ] 1. **Gather inputs** — Ask the user for track `title`, `description`, optional `order`, and a raw text block of LeetCode links.
 - [ ] 2. **Extract Slugs** — Use regex (e.g., `leetcode\.com/problems/([a-z0-9-]+)`) to extract slugs from the text.
 - [ ] 3. **Batch Fetch** — Save the slugs/URLs to a temporary file and run `fetch_batch.js` to get metadata.
 - [ ] 4. **Assemble** — Create a valid `track.json` matching the schema exactly.
 - [ ] 5. **Preview** — Present a formatted markdown preview of the track to the user.
 - [ ] 6. **Auto Upload** — Run `node scripts/manage_tracks.js --import track.json --yes` to save the track to MongoDB directly.
+
+### 🧹 Garbage Collection (Cleanup Tests)
+
+Agents and users often create "test" tracks during verification. Use the cleanup command to safely remove them.
+
+- **Command:** `node scripts/manage_tracks.js --cleanup-tests`
+- **Safety Protocol (Two-Factor):** To prevent accidental deletion of genuine data, the cleanup script ONLY targets tracks that meet BOTH criteria:
+    1.  **Title Prefix:** Starts exactly with `[TEST] ` (e.g., `[TEST] Idempotency Check`).
+    2.  **Description Marker:** Explicitly states its testing purpose (e.g., `This is a test track created to verify...`).
+- **Confirmation:** It lists all verified matches before deleting. Use `--yes` to bypass confirmation.
+- **Agent Workflow:** After verifying a new feature with a test track, always run `node scripts/manage_tracks.js --cleanup-tests --yes` to keep the database clean.
+
+### 🔄 Idempotent Operations & Anti-Duplication
+
+To prevent data duplication during batch processes or network failures, the `manage_tracks.js --import` command is **strictly idempotent**.
+
+- **Upsert Logic:** The script uses the track `title` as a unique key. If a track with the same title already exists, it will be **updated** instead of a new one being created.
+- **Safety Rule:** If a database connection times out or fails mid-batch, it is **safe and recommended** to retry the entire import command. No duplicate tracks will be created.
 
 ---
 
@@ -76,7 +94,7 @@ Before generating ANY output, verify ALL of the following. If any check fails, *
 |---|-------|-------------------|
 | 1 | Track `title` is provided | Ask: "What should this track be called?" |
 | 2 | Track `description` is provided | Ask: "Provide a short description for this track." |
-| 3 | Track `order` is provided (integer ≥ 0) | Ask: "What order number should this track have?" |
+| 3 | Track `order` (optional) | Optional. Will be auto-assigned if missing. |
 | 4 | At least 1 problem URL is provided | Ask: "Please provide the LeetCode problem URLs." |
 | 5 | Node.js 18+ is available | Run: `node --version` to confirm |
 
@@ -90,7 +108,7 @@ Before generating ANY output, verify ALL of the following. If any check fails, *
 {
   "title": "string — required, non-empty",
   "description": "string — required, non-empty",
-  "order": "integer — required, >= 0",
+  "order": "integer — optional (defaults to count + 1), >= 0",
   "problems": "array — required, min 1 item"
 }
 ```
@@ -161,6 +179,33 @@ node scripts/validate_track.js <track-json-file>
 **Output (stdout):** Formatted validation report
 **Checks:** All schema fields, cross-field consistency, duplicates, forbidden fields
 **Exit codes:** `0` all valid, `1` errors found
+
+### `db_audit.js` — Database Health Audit
+
+```bash
+node scripts/db_audit.js
+```
+
+**Output:** Table of all tracks in DB, total count, and duplication status.
+**Use case:** Quick overview of the database state and health.
+
+### `db_deduplicate.js` — Redundancy Removal
+
+```bash
+node scripts/db_deduplicate.js
+```
+
+**Action:** Safely deletes exact duplicates (same title + problems) from the DB.
+**Use case:** Cleaning up after transient network failures or accidental double-imports.
+
+### `db_bulk_export.js` — Bulk JSON Backup
+
+```bash
+node scripts/db_bulk_export.js
+```
+
+**Action:** Exports the entire database to timestamped JSON files in `backups/`.
+**Use case:** Non-interactive automated backups or migrations.
 
 ---
 

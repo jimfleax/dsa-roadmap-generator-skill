@@ -1,0 +1,74 @@
+[
+  {
+    "title": "Climbing Stairs",
+    "titleSlug": "climbing-stairs",
+    "difficulty": "Easy",
+    "url": "https://leetcode.com/problems/climbing-stairs/"
+  },
+  {
+    "title": "Min Cost Climbing Stairs",
+    "titleSlug": "min-cost-climbing-stairs",
+    "difficulty": "Easy",
+    "url": "https://leetcode.com/problems/min-cost-climbing-stairs/"
+  },
+  {
+    "title": "House Robber",
+    "titleSlug": "house-robber",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/house-robber/"
+  },
+  {
+    "title": "House Robber II",
+    "titleSlug": "house-robber-ii",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/house-robber-ii/"
+  },
+  {
+    "title": "Longest Palindromic Substring",
+    "titleSlug": "longest-palindromic-substring",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/longest-palindromic-substring/"
+  },
+  {
+    "title": "Palindromic Substrings",
+    "titleSlug": "palindromic-substrings",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/palindromic-substrings/"
+  },
+  {
+    "title": "Decode Ways",
+    "titleSlug": "decode-ways",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/decode-ways/"
+  },
+  {
+    "title": "Coin Change",
+    "titleSlug": "coin-change",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/coin-change/"
+  },
+  {
+    "title": "Maximum Product Subarray",
+    "titleSlug": "maximum-product-subarray",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/maximum-product-subarray/"
+  },
+  {
+    "title": "Word Break",
+    "titleSlug": "word-break",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/word-break/"
+  },
+  {
+    "title": "Longest Increasing Subsequence",
+    "titleSlug": "longest-increasing-subsequence",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/longest-increasing-subsequence/"
+  },
+  {
+    "title": "Partition Equal Subset Sum",
+    "titleSlug": "partition-equal-subset-sum",
+    "difficulty": "Medium",
+    "url": "https://leetcode.com/problems/partition-equal-subset-sum/"
+  }
+]
