@@ -1,0 +1,33 @@
+{
+  "name": "dsa-roadmap-generator-skill",
+  "version": "1.0.0",
+  "description": "AI Agent Skill for generating DSA roadmap track data with LeetCode metadata. Zero external dependencies.",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "fetch": "node scripts/fetch_problem.js",
+    "fetch:batch": "node scripts/fetch_batch.js",
+    "validate": "node scripts/validate_track.js",
+    "manage": "node scripts/manage_tracks.js"
+  },
+  "bin": {
+    "fetch-problem": "scripts/fetch_problem.js",
+    "fetch-batch": "scripts/fetch_batch.js",
+    "validate-track": "scripts/validate_track.js"
+  },
+  "keywords": [
+    "dsa",
+    "leetcode",
+    "roadmap",
+    "ai-agent",
+    "skill",
+    "track-generator"
+  ],
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "mongoose": "^9.6.3"
+  }
+}

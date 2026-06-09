@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/jimfleax/dsa-roadmap-generator-skill/track.schema.json",
+  "title": "DSA Roadmap Track",
+  "description": "Schema for a curated DSA roadmap track document compatible with the Track MongoDB model.",
+  "type": "object",
+  "required": ["title", "description", "order", "problems"],
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The name of the track (e.g., 'Blind 75', 'NeetCode 150')."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A brief description of this track (1-2 sentences)."
+    },
+    "order": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Display sort order in the UI. Lower numbers appear first."
+    },
+    "problems": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Array of LeetCode problem objects.",
+      "items": {
+        "$ref": "#/definitions/TrackProblem"
+      }
+    }
+  },
+  "definitions": {
+    "TrackProblem": {
+      "type": "object",
+      "required": ["title", "titleSlug", "difficulty", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The EXACT title as shown on LeetCode. Must match official casing and wording."
+        },
+        "titleSlug": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "URL slug extracted from the LeetCode URL. Lowercase, hyphens, digits only."
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": ["Easy", "Medium", "Hard"],
+          "description": "Difficulty level. Exactly one of: Easy, Medium, Hard (Title Case)."
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://leetcode\\.com/problems/[a-z0-9-]+/$",
+          "description": "Canonical LeetCode URL. Must be https, end with trailing slash, no query params."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "title": "Example Track",
+  "description": "A small example track demonstrating the correct schema format.",
+  "order": 1,
+  "problems": [
+    {
+      "title": "Two Sum",
+      "titleSlug": "two-sum",
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/two-sum/"
+    },
+    {
+      "title": "Best Time to Buy and Sell Stock",
+      "titleSlug": "best-time-to-buy-and-sell-stock",
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/"
+    },
+    {
+      "title": "Product of Array Except Self",
+      "titleSlug": "product-of-array-except-self",
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/product-of-array-except-self/"
+    },
+    {
+      "title": "Maximum Subarray",
+      "titleSlug": "maximum-subarray",
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-subarray/"
+    },
+    {
+      "title": "Merge Intervals",
+      "titleSlug": "merge-intervals",
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/merge-intervals/"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+# DSA Roadmap Track Generator — Cursor Rules
+
+## Purpose
+This project generates database-ready DSA roadmap track JSON by fetching real metadata from LeetCode's GraphQL API.
+
+## MANDATORY Rules
+
+1. NEVER guess, invent, or fabricate LeetCode problem titles or difficulties. Use the provided scripts:
+   - Single: `node scripts/fetch_problem.js <url-or-slug>`
+   - Batch: `node scripts/fetch_batch.js <file> > output.json`
+2. NEVER include `_id`, `__v`, `createdAt`, or `updatedAt` in output JSON.
+3. ALWAYS validate output with `node scripts/validate_track.js <file>` before delivering.
+4. Difficulty must be EXACTLY one of: "Easy", "Medium", "Hard" (Title Case).
+5. URLs must be canonical: `https://leetcode.com/problems/<slug>/` (https, trailing slash, no suffixes).
+6. The invariant `url === "https://leetcode.com/problems/" + titleSlug + "/"` must ALWAYS hold.
+
+## Schema (Track Document)
+```json
+{
+  "title": "string (required)",
+  "description": "string (required)",
+  "order": "integer >= 0 (required)",
+  "problems": [
+    {
+      "title": "string — exact LeetCode title",
+      "titleSlug": "string — lowercase, hyphens only",
+      "difficulty": "Easy | Medium | Hard",
+      "url": "https://leetcode.com/problems/<slug>/"
+    }
+  ]
+}
+```
+
+## Workflow
+1. Gather: track title, description, order, and problem URLs from user
+2. Fetch: Run `fetch_batch.js` or `fetch_problem.js` to resolve metadata
+3. Assemble: Wrap problems array with track metadata
+4. Validate: Run `validate_track.js` — must exit 0
+5. Deliver: Present final JSON
+
+## Resources
+- Full instructions: SKILL.md
+- JSON Schema: resources/track_schema.json
+- Example: resources/example_track.json

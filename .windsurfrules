@@ -1,0 +1,22 @@
+# DSA Roadmap Track Generator — Windsurf Rules
+
+## Purpose
+Generate database-ready DSA roadmap track JSON using LeetCode's public GraphQL API. Full instructions in SKILL.md.
+
+## Non-Negotiable Rules
+1. Never guess titles or difficulties — run `node scripts/fetch_problem.js <slug>` instead
+2. Never include _id, __v, createdAt, updatedAt in output
+3. Always validate with `node scripts/validate_track.js <file>` before delivery
+4. Difficulty is exactly "Easy", "Medium", or "Hard"
+5. URLs: `https://leetcode.com/problems/<slug>/` — https, trailing slash, no suffixes
+
+## Scripts
+- `node scripts/fetch_problem.js <url-or-slug>` → single problem JSON to stdout
+- `node scripts/fetch_batch.js <file> [--delay ms] [--retries n] > out.json` → batch JSON array
+- `node scripts/validate_track.js <file>` → validation report, exit 0 = pass
+
+## Track Schema
+title (string), description (string), order (integer >= 0), problems (array of {title, titleSlug, difficulty, url})
+
+## Formal Schema
+resources/track_schema.json (JSON Schema draft-07)
