@@ -16,4 +16,8 @@ Thumbs.db
 # Logs
 *.log
 
+# Database artifacts & backups
+backups/
+downloads/
+
 .env

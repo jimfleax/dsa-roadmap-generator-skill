@@ -798,16 +798,141 @@ async function autoImportTrack(filePath, skipConfirm) {
   }
 }
 
+async function autoDeleteTrack(title, skipConfirm) {
+  log.header('AUTO DELETE TRACK');
+  try {
+    const t = await Track.findOne({ title });
+    if (!t) {
+      log.error(`Track "${title}" not found in database.`);
+      return false;
+    }
+
+    // Safety Step 1: Auto-backup
+    const backupDir = path.resolve('./backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+    const cleanTitle = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = path.join(backupDir, `${cleanTitle}_backup_${timestamp}.json`);
+
+    const cleaned = cleanDocument(t);
+    fs.writeFileSync(backupPath, JSON.stringify(cleaned, null, 2));
+    log.info(`Safety backup created at: "${backupPath}"`);
+
+    if (!skipConfirm) {
+      const confirm1 = await askConfirm(`Are you sure you want to delete the track "${log.red(t.title)}"?`);
+      if (!confirm1) {
+        log.info('Operation cancelled. Safety backup preserved.');
+        return false;
+      }
+      console.log(`\n${C_RED}${C_BOLD}WARNING: This action is permanent!${C_RESET}`);
+      console.log(`To confirm, type the exact name of the track: ${log.accent(t.title)}`);
+      const nameConfirm = (await ask('> ')).trim();
+      if (nameConfirm !== t.title) {
+        log.error('Name mismatch! Deletion cancelled.');
+        return false;
+      }
+    } else {
+      log.info('Skipping confirmation (--yes flag detected).');
+    }
+
+    await Track.findByIdAndDelete(t._id);
+    log.success(`Successfully deleted track "${t.title}"!`);
+    return true;
+  } catch (error) {
+    log.error(`Failed to delete track: ${error.message}`);
+    return false;
+  }
+}
+
+async function autoDownloadTracks(args) {
+  log.header('AUTO DOWNLOAD TRACKS');
+  try {
+    const downloadIndex = args.indexOf('--download');
+    const outputIndex = args.indexOf('--output');
+    const dirIndex = args.indexOf('--dir');
+
+    const targetTitle = args[downloadIndex + 1];
+    let downloadDir = './downloads';
+    
+    if (dirIndex !== -1 && dirIndex + 1 < args.length) {
+      downloadDir = args[dirIndex + 1];
+    }
+
+    const resolvedDir = path.resolve(downloadDir);
+    if (!fs.existsSync(resolvedDir)) {
+      fs.mkdirSync(resolvedDir, { recursive: true });
+    }
+
+    if (targetTitle === 'ALL' || targetTitle === '*') {
+      const tracks = await Track.find().sort({ order: 1 });
+      if (tracks.length === 0) {
+        log.info('No tracks found to download.');
+        return true;
+      }
+
+      for (const t of tracks) {
+        const cleaned = cleanDocument(t);
+        const filename = `${t.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_track.json`;
+        const filePath = path.join(resolvedDir, filename);
+        fs.writeFileSync(filePath, JSON.stringify(cleaned, null, 2));
+      }
+
+      // Export all combined
+      const allCleaned = tracks.map(cleanDocument);
+      const combinedPath = path.join(resolvedDir, 'all_tracks_combined.json');
+      fs.writeFileSync(combinedPath, JSON.stringify(allCleaned, null, 2));
+
+      log.success(`Downloaded all ${tracks.length} tracks to "${resolvedDir}"`);
+      return true;
+    } else {
+      const t = await Track.findOne({ title: targetTitle });
+      if (!t) {
+        log.error(`Track "${targetTitle}" not found.`);
+        return false;
+      }
+
+      const cleaned = cleanDocument(t);
+      let filename = `${t.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_track.json`;
+      
+      if (outputIndex !== -1 && outputIndex + 1 < args.length) {
+        filename = args[outputIndex + 1];
+      }
+
+      const filePath = path.isAbsolute(filename) ? filename : path.join(resolvedDir, filename);
+      const parentDir = path.dirname(filePath);
+      if (!fs.existsSync(parentDir)) {
+        fs.mkdirSync(parentDir, { recursive: true });
+      }
+
+      fs.writeFileSync(filePath, JSON.stringify(cleaned, null, 2));
+      log.success(`Downloaded track "${t.title}" to: "${filePath}"`);
+      return true;
+    }
+  } catch (error) {
+    log.error(`Failed to download tracks: ${error.message}`);
+    return false;
+  }
+}
+
 async function run() {
-  console.log(`\n${C_BOLD}${C_GREEN}===============================================`);
-  console.log(`     Welcome to the DSA Roadmap Track Manager   `);
-  console.log(`===============================================${C_RESET}\n`);
+  const args = process.argv.slice(2);
+  const isAutonomous = args.length > 0;
+
+  if (!isAutonomous) {
+    console.log(`\n${C_BOLD}${C_GREEN}===============================================`);
+    console.log(`     Welcome to the DSA Roadmap Track Manager   `);
+    console.log(`===============================================${C_RESET}\n`);
+  }
 
   let mongoUri = getMongoUriFromEnv();
 
-  if (mongoUri) {
-    log.success(`Detected MONGODB_URI in local .env`);
-  } else {
+  if (!mongoUri) {
+    if (isAutonomous) {
+      log.error('MONGODB_URI not found in .env and required for autonomous mode. Exiting.');
+      process.exit(1);
+    }
     log.warn(`No .env file found in the current directory or MONGODB_URI is not set.`);
     mongoUri = (await ask('Please paste your MongoDB connection URI: ')).trim();
   }
@@ -824,13 +949,18 @@ async function run() {
     process.exit(1);
   }
 
-  log.info(`Connecting to: ${redactUri(mongoUri)} ...`);
+  if (!isAutonomous) {
+    log.info(`Connecting to: ${redactUri(mongoUri)} ...`);
+  }
 
   try {
     await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 10000, // 10 seconds timeout
     });
-    log.success(`Connected successfully to database "${mongoose.connection.name}" at host "${mongoose.connection.host}"!\n`);
+    
+    if (!isAutonomous) {
+      log.success(`Connected successfully to database "${mongoose.connection.name}" at host "${mongoose.connection.host}"!\n`);
+    }
 
     // Listen for connection drops
     mongoose.connection.on('error', (err) => {
@@ -841,8 +971,10 @@ async function run() {
       log.warn('Database connection disconnected!');
     });
 
-    const args = process.argv.slice(2);
     const importIndex = args.indexOf('--import');
+    const deleteIndex = args.indexOf('--delete');
+    const downloadIndex = args.indexOf('--download');
+    const listIndex = args.indexOf('--list');
     const cleanupIndex = args.indexOf('--cleanup-tests');
 
     if (importIndex !== -1 && importIndex + 1 < args.length) {
@@ -852,6 +984,23 @@ async function run() {
       await mongoose.disconnect();
       rl.close();
       process.exit(success ? 0 : 1);
+    } else if (deleteIndex !== -1 && deleteIndex + 1 < args.length) {
+      const trackTitle = args[deleteIndex + 1];
+      const skipConfirm = args.includes('--yes') || args.includes('-y');
+      const success = await autoDeleteTrack(trackTitle, skipConfirm);
+      await mongoose.disconnect();
+      rl.close();
+      process.exit(success ? 0 : 1);
+    } else if (downloadIndex !== -1 && downloadIndex + 1 < args.length) {
+      const success = await autoDownloadTracks(args);
+      await mongoose.disconnect();
+      rl.close();
+      process.exit(success ? 0 : 1);
+    } else if (listIndex !== -1) {
+      await handleViewTracks();
+      await mongoose.disconnect();
+      rl.close();
+      process.exit(0);
     } else if (cleanupIndex !== -1) {
       const skipConfirm = args.includes('--yes') || args.includes('-y');
       const success = await handleCleanupTests(skipConfirm);

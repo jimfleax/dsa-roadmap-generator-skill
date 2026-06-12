@@ -62,12 +62,15 @@ zero hallucination, zero token waste on metadata resolution.
 
 ## 🤖 Mandatory Non-Interactive Database Operations — AGENT ONLY
 
-> To ensure autonomous operation without blocking for user input, agents MUST use these non-interactive flags for ALL database modifications.
+> To ensure autonomous operation without blocking for user input, agents MUST use these non-interactive flags for ALL database modifications and data retrievals.
 
-1. **Importing/Posting Tracks:** ALWAYS use `node scripts/manage_tracks.js --import <file.json> --yes`. Never run the script without arguments to use the interactive menu.
-2. **Cleanup/GC:** ALWAYS use `node scripts/manage_tracks.js --cleanup-tests --yes`.
-3. **Audit/Audit:** Use `node scripts/db_audit.js` for quick health checks.
-4. **Export:** Use `node scripts/db_bulk_export.js` for backups.
+1. **Listing Tracks:** Use `node scripts/manage_tracks.js --list`.
+2. **Importing/Posting Tracks:** ALWAYS use `node scripts/manage_tracks.js --import <file.json> --yes`. Never run the script without arguments to use the interactive menu.
+3. **Deleting Tracks:** ALWAYS use `node scripts/manage_tracks.js --delete "<title>" --yes`.
+4. **Downloading Tracks:** ALWAYS use `node scripts/manage_tracks.js --download "<title>" [--output <file.json>] [--dir <path>]`. Use `"ALL"` as the title to download the entire database.
+5. **Cleanup/GC:** ALWAYS use `node scripts/manage_tracks.js --cleanup-tests --yes`.
+6. **Audit/Health:** Use `node scripts/db_audit.js` for quick health checks.
+7. **Export:** Use `node scripts/db_bulk_export.js` for backups.
 
 ---
 
