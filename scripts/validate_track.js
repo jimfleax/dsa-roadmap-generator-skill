@@ -34,6 +34,83 @@ const SLUG_PATTERN = /^[a-z0-9-]+$/;
  */
 
 /**
+ * Validates a single problem object.
+ */
+function validateProblem(p, path, seenSlugs, errors) {
+  // Forbidden fields in problem objects
+  for (const field of FORBIDDEN_FIELDS) {
+    if (field in p) {
+      errors.push({
+        path: `${path}.${field}`,
+        message: `Forbidden field "${field}" in problem object.`,
+        severity: 'error',
+      });
+    }
+  }
+
+  // title
+  if (!p.title || typeof p.title !== 'string' || p.title.trim().length === 0) {
+    errors.push({ path: `${path}.title`, message: 'Missing or empty.', severity: 'error' });
+  }
+
+  // titleSlug
+  if (!p.titleSlug || typeof p.titleSlug !== 'string') {
+    errors.push({ path: `${path}.titleSlug`, message: 'Missing or not a string.', severity: 'error' });
+  } else if (!SLUG_PATTERN.test(p.titleSlug)) {
+    errors.push({
+      path: `${path}.titleSlug`,
+      message: `Invalid format: "${p.titleSlug}". Must be lowercase, hyphens and digits only. No slashes, no underscores.`,
+      severity: 'error',
+    });
+  } else {
+    // Duplicate detection
+    if (seenSlugs.has(p.titleSlug)) {
+      errors.push({
+        path: `${path}.titleSlug`,
+        message: `Duplicate slug "${p.titleSlug}" (first seen at ${seenSlugs.get(p.titleSlug)}).`,
+        severity: 'error',
+      });
+    } else {
+      seenSlugs.set(p.titleSlug, path);
+    }
+  }
+
+  // difficulty
+  if (!p.difficulty || typeof p.difficulty !== 'string') {
+    errors.push({ path: `${path}.difficulty`, message: 'Missing or not a string.', severity: 'error' });
+  } else if (!VALID_DIFFICULTIES.includes(p.difficulty)) {
+    errors.push({
+      path: `${path}.difficulty`,
+      message: `Invalid value: "${p.difficulty}". Must be exactly one of: ${VALID_DIFFICULTIES.join(', ')}`,
+      severity: 'error',
+    });
+  }
+
+  // url
+  if (!p.url || typeof p.url !== 'string') {
+    errors.push({ path: `${path}.url`, message: 'Missing or not a string.', severity: 'error' });
+  } else if (!URL_PATTERN.test(p.url)) {
+    errors.push({
+      path: `${path}.url`,
+      message: `Invalid format: "${p.url}". Must match: https://leetcode.com/problems/<slug>/`,
+      severity: 'error',
+    });
+  }
+
+  // Cross-field consistency: url <-> titleSlug
+  if (p.titleSlug && p.url) {
+    const expectedUrl = `https://leetcode.com/problems/${p.titleSlug}/`;
+    if (p.url !== expectedUrl) {
+      errors.push({
+        path: `${path}`,
+        message: `URL/slug mismatch. titleSlug="${p.titleSlug}" expects url="${expectedUrl}" but got url="${p.url}".`,
+        severity: 'error',
+      });
+    }
+  }
+}
+
+/**
  * Validates a parsed track object against the schema.
  *
  * @param {object} track — The parsed JSON object
@@ -41,6 +118,7 @@ const SLUG_PATTERN = /^[a-z0-9-]+$/;
  */
 function validateTrack(track) {
   const errors = [];
+  const seenSlugs = new Map(); // slug -> path for duplicate detection
 
   // --- Forbidden fields at top level ---
   for (const field of FORBIDDEN_FIELDS) {
@@ -80,94 +158,50 @@ function validateTrack(track) {
     errors.push({ path: 'order', message: `Must be >= 0, got: ${track.order}`, severity: 'error' });
   }
 
-  // --- problems array ---
-  if (!Array.isArray(track.problems)) {
-    errors.push({ path: 'problems', message: 'Missing or not an array.', severity: 'error' });
-    return errors; // Can't validate further
-  }
+  // --- Check if problems OR parts exist ---
+  const hasProblems = Array.isArray(track.problems) && track.problems.length > 0;
+  const hasParts = Array.isArray(track.parts) && track.parts.length > 0;
 
-  if (track.problems.length === 0) {
-    errors.push({ path: 'problems', message: 'Array is empty. Must contain at least 1 problem.', severity: 'error' });
+  if (!hasProblems && !hasParts) {
+    errors.push({ 
+      path: 'track', 
+      message: 'Track must contain either a non-empty "problems" array or a non-empty "parts" array.', 
+      severity: 'error' 
+    });
     return errors;
   }
 
-  // --- Per-problem validation ---
-  const seenSlugs = new Map(); // slug -> index for duplicate detection
-
-  for (let i = 0; i < track.problems.length; i++) {
-    const p = track.problems[i];
-    const prefix = `problems[${i}]`;
-
-    // Forbidden fields in problem objects
-    for (const field of FORBIDDEN_FIELDS) {
-      if (field in p) {
-        errors.push({
-          path: `${prefix}.${field}`,
-          message: `Forbidden field "${field}" in problem object.`,
-          severity: 'error',
-        });
-      }
-    }
-
-    // title
-    if (!p.title || typeof p.title !== 'string' || p.title.trim().length === 0) {
-      errors.push({ path: `${prefix}.title`, message: 'Missing or empty.', severity: 'error' });
-    }
-
-    // titleSlug
-    if (!p.titleSlug || typeof p.titleSlug !== 'string') {
-      errors.push({ path: `${prefix}.titleSlug`, message: 'Missing or not a string.', severity: 'error' });
-    } else if (!SLUG_PATTERN.test(p.titleSlug)) {
-      errors.push({
-        path: `${prefix}.titleSlug`,
-        message: `Invalid format: "${p.titleSlug}". Must be lowercase, hyphens and digits only. No slashes, no underscores.`,
-        severity: 'error',
-      });
+  // --- problems array validation ---
+  if (track.problems) {
+    if (!Array.isArray(track.problems)) {
+      errors.push({ path: 'problems', message: 'Must be an array if present.', severity: 'error' });
     } else {
-      // Duplicate detection
-      if (seenSlugs.has(p.titleSlug)) {
-        errors.push({
-          path: `${prefix}.titleSlug`,
-          message: `Duplicate slug "${p.titleSlug}" (first seen at problems[${seenSlugs.get(p.titleSlug)}]).`,
-          severity: 'error',
-        });
-      } else {
-        seenSlugs.set(p.titleSlug, i);
-      }
+      track.problems.forEach((p, i) => validateProblem(p, `problems[${i}]`, seenSlugs, errors));
     }
+  }
 
-    // difficulty
-    if (!p.difficulty || typeof p.difficulty !== 'string') {
-      errors.push({ path: `${prefix}.difficulty`, message: 'Missing or not a string.', severity: 'error' });
-    } else if (!VALID_DIFFICULTIES.includes(p.difficulty)) {
-      errors.push({
-        path: `${prefix}.difficulty`,
-        message: `Invalid value: "${p.difficulty}". Must be exactly one of: ${VALID_DIFFICULTIES.join(', ')}`,
-        severity: 'error',
+  // --- parts array validation ---
+  if (track.parts) {
+    if (!Array.isArray(track.parts)) {
+      errors.push({ path: 'parts', message: 'Must be an array if present.', severity: 'error' });
+    } else {
+      track.parts.forEach((part, i) => {
+        const prefix = `parts[${i}]`;
+        
+        if (!part.title || typeof part.title !== 'string' || part.title.trim().length === 0) {
+          errors.push({ path: `${prefix}.title`, message: 'Missing or empty part title.', severity: 'error' });
+        }
+
+        if (part.description !== undefined && (typeof part.description !== 'string' || part.description.trim().length === 0)) {
+          errors.push({ path: `${prefix}.description`, message: 'Part description must be a non-empty string if provided.', severity: 'error' });
+        }
+
+        if (!Array.isArray(part.problems) || part.problems.length === 0) {
+          errors.push({ path: `${prefix}.problems`, message: 'Part must contain a non-empty "problems" array.', severity: 'error' });
+        } else {
+          part.problems.forEach((p, j) => validateProblem(p, `${prefix}.problems[${j}]`, seenSlugs, errors));
+        }
       });
-    }
-
-    // url
-    if (!p.url || typeof p.url !== 'string') {
-      errors.push({ path: `${prefix}.url`, message: 'Missing or not a string.', severity: 'error' });
-    } else if (!URL_PATTERN.test(p.url)) {
-      errors.push({
-        path: `${prefix}.url`,
-        message: `Invalid format: "${p.url}". Must match: https://leetcode.com/problems/<slug>/`,
-        severity: 'error',
-      });
-    }
-
-    // Cross-field consistency: url <-> titleSlug
-    if (p.titleSlug && p.url) {
-      const expectedUrl = `https://leetcode.com/problems/${p.titleSlug}/`;
-      if (p.url !== expectedUrl) {
-        errors.push({
-          path: `${prefix}`,
-          message: `URL/slug mismatch. titleSlug="${p.titleSlug}" expects url="${expectedUrl}" but got url="${p.url}".`,
-          severity: 'error',
-        });
-      }
     }
   }
 
@@ -178,7 +212,7 @@ function validateTrack(track) {
 // Report Formatting
 // ---------------------------------------------------------------------------
 
-function formatReport(errors, problemCount) {
+function formatReport(errors, totalProblems) {
   const lines = [];
   lines.push('╔══════════════════════════════════════════════════════════════╗');
   lines.push('║           DSA TRACK VALIDATION REPORT                      ║');
@@ -187,11 +221,11 @@ function formatReport(errors, problemCount) {
 
   if (errors.length === 0) {
     lines.push(`  ✅ ALL CHECKS PASSED`);
-    lines.push(`  📊 Problems validated: ${problemCount}`);
+    lines.push(`  📊 Total problems validated: ${totalProblems}`);
     lines.push(`  🟢 Status: READY FOR DATABASE INSERTION`);
   } else {
     lines.push(`  ❌ VALIDATION FAILED — ${errors.length} error(s) found`);
-    lines.push(`  📊 Problems in file: ${problemCount}`);
+    lines.push(`  📊 Total problems in file: ${totalProblems}`);
     lines.push('');
     lines.push('  ERRORS:');
     lines.push('  ─────────────────────────────────────────────');
@@ -244,10 +278,19 @@ function main() {
 
   // Step 2: Validate
   const errors = validateTrack(track);
-  const problemCount = Array.isArray(track.problems) ? track.problems.length : 0;
+  
+  // Calculate total problems
+  let totalProblems = (Array.isArray(track.problems) ? track.problems.length : 0);
+  if (Array.isArray(track.parts)) {
+    track.parts.forEach(part => {
+      if (Array.isArray(part.problems)) {
+        totalProblems += part.problems.length;
+      }
+    });
+  }
 
   // Step 3: Report
-  const report = formatReport(errors, problemCount);
+  const report = formatReport(errors, totalProblems);
   process.stdout.write(report + '\n');
 
   // Step 4: Exit

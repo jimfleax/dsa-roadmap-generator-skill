@@ -10,6 +10,14 @@ This project is an **AI Agent Skill** for generating database-ready DSA roadmap 
 
 Read [`SKILL.md`](./SKILL.md) for the complete workflow, schema definition, and constraints.
 
+## Mandatory Non-Interactive Mode (CRITICAL)
+
+To avoid blocking for user input, agents **MUST** use the following flags for database operations:
+- **Importing:** `node scripts/manage_tracks.js --import <file.json> --yes`
+- **Cleanup:** `node scripts/manage_tracks.js --cleanup-tests --yes`
+
+**Never** run `manage_tracks.js` without arguments, as it will enter an interactive menu that requires manual intervention.
+
 ## Quick Reference
 
 ### Available Scripts (Node.js 18+, zero dependencies)
@@ -17,7 +25,7 @@ Read [`SKILL.md`](./SKILL.md) for the complete workflow, schema definition, and 
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `scripts/fetch_problem.js` | Fetch metadata for a single problem | `node scripts/fetch_problem.js two-sum` |
-| `scripts/fetch_batch.js` | Batch fetch from a URL list file | `node scripts/fetch_batch.js urls.md > out.json` |
+| `scripts/fetch_batch.js` | Batch fetch with hierarchy support | `node scripts/fetch_batch.js urls.md --parts > out.json` |
 | `scripts/validate_track.js` | Validate a track JSON against schema | `node scripts/validate_track.js track.json` |
 | `scripts/manage_tracks.js` | Import tracks (Idempotent Upsert) | `node scripts/manage_tracks.js --import track.json --yes` |
 | `scripts/manage_tracks.js` | Cleanup test tracks (Strict GC) | `node scripts/manage_tracks.js --cleanup-tests --yes` |

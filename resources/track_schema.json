@@ -4,7 +4,7 @@
   "title": "DSA Roadmap Track",
   "description": "Schema for a curated DSA roadmap track document compatible with the Track MongoDB model.",
   "type": "object",
-  "required": ["title", "description", "problems"],
+  "required": ["title", "description"],
   "additionalProperties": false,
   "properties": {
     "title": {
@@ -24,14 +24,43 @@
     },
     "problems": {
       "type": "array",
-      "minItems": 1,
-      "description": "Array of LeetCode problem objects.",
+      "description": "Flat array of LeetCode problem objects (for simple tracks).",
       "items": {
         "$ref": "#/definitions/TrackProblem"
+      }
+    },
+    "parts": {
+      "type": "array",
+      "description": "Array of sub-tracks (milestones) for organized tracks.",
+      "items": {
+        "$ref": "#/definitions/TrackPart"
       }
     }
   },
   "definitions": {
+    "TrackPart": {
+      "type": "object",
+      "required": ["title", "problems"],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Title of the sub-track/milestone."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of the milestone."
+        },
+        "problems": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/TrackProblem"
+          }
+        }
+      }
+    },
     "TrackProblem": {
       "type": "object",
       "required": ["title", "titleSlug", "difficulty", "url"],

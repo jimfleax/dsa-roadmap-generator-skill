@@ -59,11 +59,10 @@ function logStderr(msg) {
 }
 
 /**
- * Extracts all unique LeetCode problem slugs from arbitrary text.
- * Handles markdown tables, plain URLs, mixed prose, etc.
+ * Extracts unique LeetCode problem slugs from arbitrary text.
  *
- * @param {string} text — Raw file content
- * @returns {string[]} Ordered, deduplicated array of slugs
+ * @param {string} text
+ * @returns {string[]}
  */
 function extractSlugs(text) {
   const regex = /https?:\/\/leetcode\.com\/problems\/([a-z0-9-]+)/gi;
@@ -80,6 +79,43 @@ function extractSlugs(text) {
   }
 
   return slugs;
+}
+
+/**
+ * Extracts structured parts from markdown/text.
+ * Groups URLs under headers.
+ */
+function extractStructure(text) {
+  const lines = text.split(/\r?\n/);
+  const structure = [];
+  let currentPart = { title: 'General', problems: [] };
+  const slugRegex = /https?:\/\/leetcode\.com\/problems\/([a-z0-9-]+)/i;
+  const headerRegex = /^#+\s+(.+)$/;
+
+  for (const line of lines) {
+    const headerMatch = line.match(headerRegex);
+    if (headerMatch) {
+      if (currentPart.problems.length > 0) {
+        structure.push(currentPart);
+      }
+      currentPart = { title: headerMatch[1].trim(), problems: [] };
+      continue;
+    }
+
+    const slugMatch = line.match(slugRegex);
+    if (slugMatch) {
+      const slug = slugMatch[1].toLowerCase();
+      if (!currentPart.problems.includes(slug)) {
+        currentPart.problems.push(slug);
+      }
+    }
+  }
+
+  if (currentPart.problems.length > 0) {
+    structure.push(currentPart);
+  }
+
+  return structure;
 }
 
 /**
@@ -152,6 +188,7 @@ function parseArgs() {
   let filePath = null;
   let delay = 200;
   let retries = 3;
+  let useParts = false;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--delay' && args[i + 1]) {
@@ -168,6 +205,8 @@ function parseArgs() {
         process.exit(1);
       }
       i++;
+    } else if (args[i] === '--parts') {
+      useParts = true;
     } else if (!filePath) {
       filePath = args[i];
     } else {
@@ -176,12 +215,12 @@ function parseArgs() {
   }
 
   if (!filePath) {
-    logStderr('Usage: node scripts/fetch_batch.js <input-file> [--delay <ms>] [--retries <n>]');
-    logStderr('  Example: node scripts/fetch_batch.js ./urls.md > problems.json');
+    logStderr('Usage: node scripts/fetch_batch.js <input-file> [--delay <ms>] [--retries <n>] [--parts]');
+    logStderr('  Example: node scripts/fetch_batch.js ./urls.md --parts > track_parts.json');
     process.exit(1);
   }
 
-  return { filePath: resolve(filePath), delay, retries };
+  return { filePath: resolve(filePath), delay, retries, useParts };
 }
 
 // ---------------------------------------------------------------------------
@@ -189,7 +228,7 @@ function parseArgs() {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const { filePath, delay, retries } = parseArgs();
+  const { filePath, delay, retries, useParts } = parseArgs();
 
   // Step 1: Read input file
   let content;
@@ -200,19 +239,32 @@ async function main() {
     process.exit(1);
   }
 
-  // Step 2: Extract slugs
-  const slugs = extractSlugs(content);
+  // Step 2: Extract work items
+  let slugs = [];
+  let structure = null;
+
+  if (useParts) {
+    structure = extractStructure(content);
+    // Deduplicate slugs while maintaining order of first appearance
+    const seen = new Set();
+    slugs = structure.flatMap(s => s.problems).filter(slug => {
+      if (seen.has(slug)) return false;
+      seen.add(slug);
+      return true;
+    });
+  } else {
+    slugs = extractSlugs(content);
+  }
 
   if (slugs.length === 0) {
     logStderr('No LeetCode URLs found in the input file.');
-    logStderr('Expected URLs like: https://leetcode.com/problems/two-sum/');
     process.exit(1);
   }
 
   logStderr(`Found ${slugs.length} unique LeetCode problems. Starting fetch...\n`);
 
-  // Step 3: Fetch all
-  const problems = [];
+  // Step 3: Fetch all metadata
+  const metadataMap = new Map();
   const failures = [];
 
   for (let i = 0; i < slugs.length; i++) {
@@ -222,7 +274,7 @@ async function main() {
     const info = await fetchProblemInfo(slug, retries);
 
     if (info) {
-      problems.push({
+      metadataMap.set(slug, {
         title: info.title,
         titleSlug: info.titleSlug,
         difficulty: info.difficulty,
@@ -232,17 +284,14 @@ async function main() {
       failures.push({ slug, reason: 'Not found or fetch failed' });
     }
 
-    // Rate-limit delay (skip on last item)
-    if (i < slugs.length - 1) {
-      await sleep(delay);
-    }
+    if (i < slugs.length - 1) await sleep(delay);
   }
 
   // Step 4: Output results
   logStderr('');
   logStderr(`--- SUMMARY ---`);
   logStderr(`Total unique slugs: ${slugs.length}`);
-  logStderr(`Successfully fetched: ${problems.length}`);
+  logStderr(`Successfully fetched: ${metadataMap.size}`);
   logStderr(`Failed: ${failures.length}`);
 
   if (failures.length > 0) {
@@ -251,13 +300,23 @@ async function main() {
     logStderr(`Failed slugs written to: ${failPath}`);
   }
 
-  // Write the problems array to stdout
-  process.stdout.write(JSON.stringify(problems, null, 2) + '\n');
-
-  // Exit with code 2 if there were partial failures
-  if (failures.length > 0) {
-    process.exit(2);
+  if (useParts) {
+    const finalParts = structure.map((s) => ({
+      title: s.title,
+      problems: s.problems
+        .map((slug) => metadataMap.get(slug))
+        .filter(Boolean),
+    })).filter(p => p.problems.length > 0);
+    
+    process.stdout.write(JSON.stringify(finalParts, null, 2) + '\n');
+  } else {
+    const problems = slugs
+      .map((slug) => metadataMap.get(slug))
+      .filter(Boolean);
+    process.stdout.write(JSON.stringify(problems, null, 2) + '\n');
   }
+
+  if (failures.length > 0) process.exit(2);
 }
 
 main();

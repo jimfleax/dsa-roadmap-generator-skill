@@ -47,24 +47,39 @@ zero hallucination, zero token waste on metadata resolution.
 
 ### Batch Generation (Full Track)
 
-- [ ] 1. **Gather inputs** — User provides: track title, description, optional order number, and a source of problem URLs (markdown file, text list, or inline URLs)
-- [ ] 2. **Validate inputs** — Run the Pre-Flight Checklist (see below)
-- [ ] 3. **Save URLs to a file** if not already in one
-- [ ] 4. **Run batch fetch** — `node scripts/fetch_batch.js ./urls.md > problems.json`
-- [ ] 5. **Check for failures** — If `_failures.json` exists, report to user for resolution
-- [ ] 6. **Assemble track** — Wrap the problems array with track metadata (title, description). `order` is optional and defaults to total tracks + 1.
+- [ ] 1. **Gather inputs** — User provides: track title, description, optional order number, and a source of problem URLs.
+- [ ] 2. **Determine Structure** — Ask: "Should this be a standalone track or a partitioned track with milestones (sub-tracks)?"
+- [ ] 3. **Validate inputs** — Run the Pre-Flight Checklist (see below)
+- [ ] 4. **Run batch fetch**:
+    - For flat tracks: `node scripts/fetch_batch.js ./urls.md > problems.json`
+    - For partitioned tracks: `node scripts/fetch_batch.js ./urls.md --parts > parts.json`
+- [ ] 5. **Check for failures** — If `_failures.json` exists, report to user for resolution.
+- [ ] 6. **Assemble track** — Wrap the problems array OR parts array with track metadata.
 - [ ] 7. **Validate** — `node scripts/validate_track.js ./track.json`
-- [ ] 8. **Fix any errors** — If validation fails, correct issues and re-validate
-- [ ] 9. **Deliver** — Present the final JSON to the user
+- [ ] 8. **Post to Database (Mandatory Non-Interactive)** — Run `node scripts/manage_tracks.js --import track.json --yes`.
+- [ ] 9. **Deliver** — Present the final JSON and confirmation to the user.
+---
 
+## 🤖 Mandatory Non-Interactive Database Operations — AGENT ONLY
+
+> To ensure autonomous operation without blocking for user input, agents MUST use these non-interactive flags for ALL database modifications.
+
+1. **Importing/Posting Tracks:** ALWAYS use `node scripts/manage_tracks.js --import <file.json> --yes`. Never run the script without arguments to use the interactive menu.
+2. **Cleanup/GC:** ALWAYS use `node scripts/manage_tracks.js --cleanup-tests --yes`.
+3. **Audit/Audit:** Use `node scripts/db_audit.js` for quick health checks.
+4. **Export:** Use `node scripts/db_bulk_export.js` for backups.
+
+---
+
+## Workflow
+...
 ### Text-to-Track Auto-Ingestion (Text Links to DB)
 
-- [ ] 1. **Gather inputs** — Ask the user for track `title`, `description`, optional `order`, and a raw text block of LeetCode links.
-- [ ] 2. **Extract Slugs** — Use regex (e.g., `leetcode\.com/problems/([a-z0-9-]+)`) to extract slugs from the text.
-- [ ] 3. **Batch Fetch** — Save the slugs/URLs to a temporary file and run `fetch_batch.js` to get metadata.
-- [ ] 4. **Assemble** — Create a valid `track.json` matching the schema exactly.
-- [ ] 5. **Preview** — Present a formatted markdown preview of the track to the user.
-- [ ] 6. **Auto Upload** — Run `node scripts/manage_tracks.js --import track.json --yes` to save the track to MongoDB directly.
+- [ ] 1. **Gather inputs** — Ask for track `title`, `description`, and a raw text block/file.
+- [ ] 2. **Detect Hierarchy** — Look for headers (e.g., `## Part 1`) in the text. If found, suggest a partitioned track.
+- [ ] 3. **Batch Fetch** — Run `fetch_batch.js --parts` if hierarchy is detected or requested.
+- [ ] 4. **Assemble & Validate** — Create a valid `track.json` and run `validate_track.js`.
+- [ ] 5. **Post to Database (Mandatory Non-Interactive)** — Run `node scripts/manage_tracks.js --import track.json --yes`.
 
 ### 🧹 Garbage Collection (Cleanup Tests)
 
@@ -86,6 +101,16 @@ To prevent data duplication during batch processes or network failures, the `man
 
 ---
 
+## Intelligent Hierarchy Inference
+
+When provided with a structured document (Markdown/PDF/Text), the agent should:
+1. **Identify Groupings:** Headers (`#`, `##`, `###`) or bolded labels often indicate milestones.
+2. **Map URLs:** Group LeetCode URLs under their nearest preceding header.
+3. **Infer Descriptions:** If text follows a header before the first URL, use it as the `description` for that `part`.
+4. **Tool Use:** Always use `fetch_batch.js --parts` to automate this grouping.
+
+---
+
 ## Pre-Flight Checklist
 
 Before generating ANY output, verify ALL of the following. If any check fails, **STOP and prompt the user**.
@@ -95,8 +120,9 @@ Before generating ANY output, verify ALL of the following. If any check fails, *
 | 1 | Track `title` is provided | Ask: "What should this track be called?" |
 | 2 | Track `description` is provided | Ask: "Provide a short description for this track." |
 | 3 | Track `order` (optional) | Optional. Will be auto-assigned if missing. |
-| 4 | At least 1 problem URL is provided | Ask: "Please provide the LeetCode problem URLs." |
-| 5 | Node.js 18+ is available | Run: `node --version` to confirm |
+| 4 | Structure preference | Ask: "Standalone or with milestones (sub-tracks)?" |
+| 5 | At least 1 problem URL is provided | Ask: "Please provide the LeetCode problem URLs." |
+| 6 | Node.js 18+ is available | Run: `node --version` to confirm |
 
 ---
 
@@ -106,10 +132,23 @@ Before generating ANY output, verify ALL of the following. If any check fails, *
 
 ```json
 {
-  "title": "string — required, non-empty",
-  "description": "string — required, non-empty",
-  "order": "integer — optional (defaults to count + 1), >= 0",
-  "problems": "array — required, min 1 item"
+  "title": "string — required",
+  "description": "string — required",
+  "order": "integer — optional",
+  "problems": "array — optional (flat list)",
+  "parts": "array — optional (hierarchical list)"
+}
+```
+
+*Note: A track must have either `problems` or `parts` defined.*
+
+### Track Part (Milestone)
+
+```json
+{
+  "title": "string — required",
+  "description": "string — optional",
+  "problems": "array — required (at least 1)"
 }
 ```
 
@@ -159,15 +198,16 @@ node scripts/fetch_problem.js <url-or-slug>
 ### `fetch_batch.js` — Batch Fetch
 
 ```bash
-node scripts/fetch_batch.js <input-file> [--delay <ms>] [--retries <n>] > output.json
+node scripts/fetch_batch.js <input-file> [--delay <ms>] [--retries <n>] [--parts] > output.json
 ```
 
-**Input:** Path to any file containing LeetCode URLs (markdown, text, etc.)
-**Output (stdout):** JSON array of problem objects
+**Input:** Path to any file containing LeetCode URLs.
+**Output (stdout):** JSON array of problems OR JSON array of parts (if `--parts` is used).
 **Options:**
-- `--delay <ms>` — Delay between requests (default: 200)
-- `--retries <n>` — Max retries per problem (default: 3)
-**Exit codes:** `0` all success, `1` bad args, `2` partial failures (see `_failures.json`)
+- `--delay <ms>` — Delay between requests (default: 200).
+- `--retries <n>` — Max retries per problem (default: 3).
+- `--parts` — **New:** Intelligent grouping by Markdown headers.
+**Exit codes:** `0` success, `1` bad args, `2` partial failures.
 
 ### `validate_track.js` — Schema Validator
 

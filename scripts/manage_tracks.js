@@ -35,21 +35,28 @@ const log = {
 };
 
 // Mongoose schema definition matching the app's models
+const ProblemSchema = {
+  title: { type: String, required: true },
+  titleSlug: { type: String, required: true },
+  difficulty: {
+    type: String,
+    enum: ['Easy', 'Medium', 'Hard'],
+    required: true,
+  },
+  url: { type: String, required: true },
+};
+
 const TrackSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: { type: String, required: true },
     order: { type: Number, required: true, default: 0 },
-    problems: [
+    problems: [ProblemSchema],
+    parts: [
       {
         title: { type: String, required: true },
-        titleSlug: { type: String, required: true },
-        difficulty: {
-          type: String,
-          enum: ['Easy', 'Medium', 'Hard'],
-          required: true,
-        },
-        url: { type: String, required: true },
+        description: { type: String },
+        problems: [ProblemSchema],
       },
     ],
   },
@@ -65,11 +72,58 @@ const URL_PATTERN = /^https:\/\/leetcode\.com\/problems\/[a-z0-9-]+\/$/;
 const SLUG_PATTERN = /^[a-z0-9-]+$/;
 
 /**
+ * Validates a single problem object.
+ */
+function validateProblem(p, path, seenSlugs, errors) {
+  for (const field of FORBIDDEN_FIELDS) {
+    if (field in p) {
+      errors.push(`Forbidden field "${field}" inside ${path}.`);
+    }
+  }
+
+  if (!p.title || typeof p.title !== 'string' || p.title.trim().length === 0) {
+    errors.push(`Missing or empty title inside ${path}.`);
+  }
+
+  if (!p.titleSlug || typeof p.titleSlug !== 'string') {
+    errors.push(`Missing or empty titleSlug inside ${path}.`);
+  } else if (!SLUG_PATTERN.test(p.titleSlug)) {
+    errors.push(`Invalid titleSlug format inside ${path}: "${p.titleSlug}". Must be lowercase, hyphens, digits only.`);
+  } else {
+    if (seenSlugs.has(p.titleSlug)) {
+      errors.push(`Duplicate titleSlug inside ${path}: "${p.titleSlug}".`);
+    } else {
+      seenSlugs.add(p.titleSlug);
+    }
+  }
+
+  if (!p.difficulty || typeof p.difficulty !== 'string') {
+    errors.push(`Missing difficulty inside ${path}.`);
+  } else if (!VALID_DIFFICULTIES.includes(p.difficulty)) {
+    errors.push(`Invalid difficulty inside ${path}: "${p.difficulty}". Must be Easy, Medium, or Hard.`);
+  }
+
+  if (!p.url || typeof p.url !== 'string') {
+    errors.push(`Missing url inside ${path}.`);
+  } else if (!URL_PATTERN.test(p.url)) {
+    errors.push(`Invalid url format inside ${path}: "${p.url}". Must match: https://leetcode.com/problems/<slug>/`);
+  }
+
+  if (p.titleSlug && p.url) {
+    const expectedUrl = `https://leetcode.com/problems/${p.titleSlug}/`;
+    if (p.url !== expectedUrl) {
+      errors.push(`URL and titleSlug mismatch in ${path}. slug="${p.titleSlug}" expects url="${expectedUrl}" but got url="${p.url}".`);
+    }
+  }
+}
+
+/**
  * Validates track object against the schema.
  * Re-uses rules from validate_track.js
  */
 function validateTrackData(track) {
   const errors = [];
+  const seenSlugs = new Set();
 
   // Top level fields
   for (const field of FORBIDDEN_FIELDS) {
@@ -92,61 +146,39 @@ function validateTrackData(track) {
     errors.push(`"order" must be a non-negative integer, got: ${JSON.stringify(track.order)}`);
   }
 
-  if (!Array.isArray(track.problems)) {
-    errors.push('Missing or invalid "problems" field (must be an array).');
+  const hasProblems = Array.isArray(track.problems) && track.problems.length > 0;
+  const hasParts = Array.isArray(track.parts) && track.parts.length > 0;
+
+  if (!hasProblems && !hasParts) {
+    errors.push('Track must contain either a non-empty "problems" array or a non-empty "parts" array.');
     return errors;
   }
 
-  if (track.problems.length === 0) {
-    errors.push('"problems" array must contain at least 1 problem.');
+  if (track.problems) {
+    if (!Array.isArray(track.problems)) {
+      errors.push('"problems" must be an array.');
+    } else {
+      track.problems.forEach((p, idx) => validateProblem(p, `problems[${idx}]`, seenSlugs, errors));
+    }
   }
 
-  // Individual problems
-  const seenSlugs = new Set();
-  track.problems.forEach((p, idx) => {
-    const prefix = `problems[${idx}]`;
-
-    for (const field of FORBIDDEN_FIELDS) {
-      if (field in p) {
-        errors.push(`Forbidden field "${field}" inside ${prefix}.`);
-      }
-    }
-
-    if (!p.title || typeof p.title !== 'string' || p.title.trim().length === 0) {
-      errors.push(`Missing or empty title inside ${prefix}.`);
-    }
-
-    if (!p.titleSlug || typeof p.titleSlug !== 'string') {
-      errors.push(`Missing or empty titleSlug inside ${prefix}.`);
-    } else if (!SLUG_PATTERN.test(p.titleSlug)) {
-      errors.push(`Invalid titleSlug format inside ${prefix}: "${p.titleSlug}". Must be lowercase, hyphens, digits only.`);
+  if (track.parts) {
+    if (!Array.isArray(track.parts)) {
+      errors.push('"parts" must be an array.');
     } else {
-      if (seenSlugs.has(p.titleSlug)) {
-        errors.push(`Duplicate titleSlug inside ${prefix}: "${p.titleSlug}".`);
-      } else {
-        seenSlugs.add(p.titleSlug);
-      }
+      track.parts.forEach((part, idx) => {
+        const prefix = `parts[${idx}]`;
+        if (!part.title || typeof part.title !== 'string' || part.title.trim().length === 0) {
+          errors.push(`Missing or empty title inside ${prefix}.`);
+        }
+        if (!Array.isArray(part.problems) || part.problems.length === 0) {
+          errors.push(`Missing or empty problems array inside ${prefix}.`);
+        } else {
+          part.problems.forEach((p, pIdx) => validateProblem(p, `${prefix}.problems[${pIdx}]`, seenSlugs, errors));
+        }
+      });
     }
-
-    if (!p.difficulty || typeof p.difficulty !== 'string') {
-      errors.push(`Missing difficulty inside ${prefix}.`);
-    } else if (!VALID_DIFFICULTIES.includes(p.difficulty)) {
-      errors.push(`Invalid difficulty inside ${prefix}: "${p.difficulty}". Must be Easy, Medium, or Hard.`);
-    }
-
-    if (!p.url || typeof p.url !== 'string') {
-      errors.push(`Missing url inside ${prefix}.`);
-    } else if (!URL_PATTERN.test(p.url)) {
-      errors.push(`Invalid url format inside ${prefix}: "${p.url}". Must match: https://leetcode.com/problems/<slug>/`);
-    }
-
-    if (p.titleSlug && p.url) {
-      const expectedUrl = `https://leetcode.com/problems/${p.titleSlug}/`;
-      if (p.url !== expectedUrl) {
-        errors.push(`URL and titleSlug mismatch in ${prefix}. slug="${p.titleSlug}" expects url="${expectedUrl}" but got url="${p.url}".`);
-      }
-    }
-  });
+  }
 
   return errors;
 }
@@ -238,6 +270,14 @@ function formatStats(stats) {
 // CRUD Menu Handlers
 // ---------------------------------------------------------------------------
 
+// Helper to sum problems across flat array and parts
+function getAllProblems(track) {
+  return [
+    ...(track.problems || []),
+    ...(track.parts?.flatMap(p => p.problems) || [])
+  ];
+}
+
 async function handleViewTracks() {
   log.header('VIEW TRACKS');
   try {
@@ -250,10 +290,14 @@ async function handleViewTracks() {
     console.log(`\nFound ${log.accent(tracks.length)} track(s) in the database:\n`);
     for (let i = 0; i < tracks.length; i++) {
       const t = tracks[i];
-      const stats = getDifficultyStats(t.problems);
+      const allProbs = getAllProblems(t);
+      const stats = getDifficultyStats(allProbs);
       console.log(`${C_BOLD}${i + 1}. ${t.title}${C_RESET} (Order: ${t.order})`);
       console.log(`   Description: ${t.description}`);
-      console.log(`   Problems: ${log.accent(t.problems.length)} [${formatStats(stats)}]`);
+      console.log(`   Problems: ${log.accent(allProbs.length)} [${formatStats(stats)}]`);
+      if (t.parts?.length > 0) {
+        console.log(`   Structure:  ${log.cyan(t.parts.length)} Parts/Milestones`);
+      }
       console.log('   ──────────────────────────────────────────────────────────');
     }
   } catch (error) {
@@ -292,12 +336,16 @@ async function handleAddTrack() {
       return;
     }
 
-    const stats = getDifficultyStats(trackData.problems);
+    const allProbs = getAllProblems(trackData);
+    const stats = getDifficultyStats(allProbs);
     log.info(`Valid Track JSON Loaded!`);
     console.log(`  Title:       ${log.accent(trackData.title)}`);
     console.log(`  Description: ${trackData.description}`);
     console.log(`  Order:       ${trackData.order}`);
-    console.log(`  Problems:    ${log.accent(trackData.problems.length)} [${formatStats(stats)}]`);
+    console.log(`  Problems:    ${log.accent(allProbs.length)} [${formatStats(stats)}]`);
+    if (trackData.parts?.length > 0) {
+      console.log(`  Parts:       ${log.cyan(trackData.parts.length)}`);
+    }
 
     const confirm = await askConfirm('Are you sure you want to add this track to the database?');
     if (!confirm) {
@@ -308,7 +356,7 @@ async function handleAddTrack() {
     const newTrack = await Track.create(trackData);
     log.success(`Successfully added track "${newTrack.title}"!`);
     console.log(`  ID:        ${newTrack._id}`);
-    console.log(`  Problems:  ${newTrack.problems.length}`);
+    console.log(`  Problems:  ${allProbs.length}`);
   } catch (error) {
     log.error(`Failed to add track: ${error.message}`);
   }
@@ -325,7 +373,8 @@ async function handleEditTrack() {
 
     console.log('\nSelect a track to edit:\n');
     tracks.forEach((t, index) => {
-      console.log(`  [${index + 1}] ${t.title} (Order: ${t.order}, Problems: ${t.problems.length})`);
+      const allProbs = getAllProblems(t);
+      console.log(`  [${index + 1}] ${t.title} (Order: ${t.order}, Problems: ${allProbs.length})`);
     });
     console.log('  [0] Cancel');
 
@@ -373,8 +422,8 @@ async function handleEditTrack() {
     }
 
     // Generate diff metrics
-    const originalProblems = selectedTrack.problems.map(p => p.titleSlug);
-    const newProblems = updatedData.problems.map(p => p.titleSlug);
+    const originalProblems = getAllProblems(selectedTrack).map(p => p.titleSlug);
+    const newProblems = getAllProblems(updatedData).map(p => p.titleSlug);
 
     const added = newProblems.filter(p => !originalProblems.includes(p));
     const removed = originalProblems.filter(p => !newProblems.includes(p));
@@ -389,7 +438,7 @@ async function handleEditTrack() {
     if (selectedTrack.order !== updatedData.order) {
       console.log(`  Order:        ${selectedTrack.order} -> ${log.accent(updatedData.order)}`);
     }
-    console.log(`  Problems:     ${selectedTrack.problems.length} -> ${log.accent(updatedData.problems.length)}`);
+    console.log(`  Problems:     ${originalProblems.length} -> ${log.accent(newProblems.length)}`);
 
     if (added.length > 0) {
       console.log(`  Added problems (${added.length}):`);
@@ -424,7 +473,8 @@ async function handleDownloadTracks() {
 
     console.log('\nSelect track(s) to download:\n');
     tracks.forEach((t, index) => {
-      console.log(`  [${index + 1}] ${t.title} (${t.problems.length} problems)`);
+      const allProbs = getAllProblems(t);
+      console.log(`  [${index + 1}] ${t.title} (${allProbs.length} problems)`);
     });
     console.log(`  [A] All tracks (combined & individual)`);
     console.log('  [0] Cancel');
@@ -489,7 +539,8 @@ async function handleDeleteTrack() {
 
     console.log('\nSelect track to delete:\n');
     tracks.forEach((t, index) => {
-      console.log(`  [${index + 1}] ${t.title} (${t.problems.length} problems)`);
+      const allProbs = getAllProblems(t);
+      console.log(`  [${index + 1}] ${t.title} (${allProbs.length} problems)`);
     });
     console.log('  [0] Cancel');
 
@@ -700,12 +751,16 @@ async function autoImportTrack(filePath, skipConfirm) {
       return false;
     }
 
-    const stats = getDifficultyStats(trackData.problems);
+    const allProbs = getAllProblems(trackData);
+    const stats = getDifficultyStats(allProbs);
     log.info(`Valid Track JSON Loaded!`);
     console.log(`  Title:       ${log.accent(trackData.title)}`);
     console.log(`  Description: ${trackData.description}`);
     console.log(`  Order:       ${trackData.order}`);
-    console.log(`  Problems:    ${log.accent(trackData.problems.length)} [${formatStats(stats)}]`);
+    console.log(`  Problems:    ${log.accent(allProbs.length)} [${formatStats(stats)}]`);
+    if (trackData.parts?.length > 0) {
+      console.log(`  Parts:       ${log.cyan(trackData.parts.length)}`);
+    }
 
     if (!skipConfirm) {
       const confirm = await askConfirm('Are you sure you want to add this track to the database?');
@@ -735,7 +790,7 @@ async function autoImportTrack(filePath, skipConfirm) {
     }
 
     console.log(`  ID:        ${savedTrack._id}`);
-    console.log(`  Problems:  ${savedTrack.problems.length}`);
+    console.log(`  Problems:  ${allProbs.length}`);
     return true;
   } catch (error) {
     log.error(`Failed to auto-import track: ${error.message}`);
