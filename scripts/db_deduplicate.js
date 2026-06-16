@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
-import path from 'node:path';
-import fs from 'node:fs';
+import { Track, getTrackSignature, getMongoUriFromEnv } from './lib/models.js';
 
 const C_RESET = '\x1b[0m';
 const C_BOLD = '\x1b[1m';
@@ -8,22 +7,9 @@ const C_GREEN = '\x1b[32m';
 const C_CYAN = '\x1b[36m';
 const C_RED = '\x1b[31m';
 
-const TrackSchema = new mongoose.Schema({
-  title: String,
-  problems: [{ titleSlug: String }]
-}, { timestamps: true });
-
-const Track = mongoose.models.Track || mongoose.model('Track', TrackSchema);
-
-function getMongoUriFromEnv() {
-  const envPath = path.join(process.cwd(), '.env');
-  const envContent = fs.readFileSync(envPath, 'utf8');
-  const match = envContent.match(/MONGODB_URI=(.+)/);
-  return match ? match[1].trim().replace(/^['"]|['"]$/g, '') : null;
-}
-
 async function run() {
   const uri = getMongoUriFromEnv();
+  if (!uri) { console.error('No MONGODB_URI found in .env'); process.exit(1); }
   await mongoose.connect(uri);
   
   const tracks = await Track.find().sort({ createdAt: 1 });
@@ -33,8 +19,8 @@ async function run() {
   console.log(`${C_CYAN}Analyzing ${tracks.length} tracks for exact duplicates...${C_RESET}`);
 
   for (const t of tracks) {
-    const slugs = t.problems.map(p => p.titleSlug).sort().join(',');
-    const signature = `${t.title}|${slugs}`;
+    // Uses shared helper — correctly includes parts[].problems[] slugs
+    const signature = getTrackSignature(t);
     
     if (seen.has(signature)) {
       toDelete.push(t._id);

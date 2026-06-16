@@ -1,6 +1,6 @@
 # DSA Roadmap Generator Skill
 
-An AI Agent Skill for generating insertion-ready DSA roadmap track JSON documents with real LeetCode metadata. Zero external dependencies, zero guesswork.
+An AI Agent Skill for generating insertion-ready DSA roadmap track JSON documents with real LeetCode metadata.
 
 ## What It Does
 
@@ -8,7 +8,8 @@ Takes a list of LeetCode problem URLs and produces a validated JSON document mat
 
 ## Features
 
-- **Zero dependencies** — Uses Node.js built-in `fetch` (v18+)
+- **Lightweight** — Core fetch/validate scripts use only Node.js built-in `fetch` (v18+), zero external dependencies
+- **Database tooling** — Track management, auditing, deduplication, and bulk export via `mongoose`
 - **Anti-hallucination** — Scripts fetch real data; agents never need to guess
 - **Cross-agent compatible** — Works with Antigravity, Cursor, Windsurf, Cline, Claude Code
 - **Strict validation** — Schema validator catches all formatting errors before insertion
@@ -18,7 +19,8 @@ Takes a list of LeetCode problem URLs and produces a validated JSON document mat
 ## Requirements
 
 - **Node.js 18+** (for built-in `fetch`)
-- No `npm install` needed
+- **MongoDB** connection URI (for database operations)
+- Run `npm install` to install `mongoose` (required by DB scripts)
 
 ## Quick Start
 
@@ -40,6 +42,31 @@ node scripts/fetch_batch.js ./my_urls.md > problems.json
 ```bash
 node scripts/validate_track.js ./my_track.json
 ```
+
+### Manage tracks in the database
+
+```bash
+# Interactive menu
+node scripts/manage_tracks.js
+
+# Non-interactive (for agents)
+node scripts/manage_tracks.js --import track.json --yes
+node scripts/manage_tracks.js --list
+node scripts/manage_tracks.js --cleanup-tests --yes
+```
+
+## Available Scripts
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `scripts/fetch_problem.js` | Fetch metadata for a single problem | `node scripts/fetch_problem.js two-sum` |
+| `scripts/fetch_batch.js` | Batch fetch with hierarchy support | `node scripts/fetch_batch.js urls.md --parts > out.json` |
+| `scripts/validate_track.js` | Validate a track JSON against schema | `node scripts/validate_track.js track.json` |
+| `scripts/manage_tracks.js` | Full CRUD track management (import, delete, download, list, cleanup) | `node scripts/manage_tracks.js --import track.json --yes` |
+| `scripts/db_audit.js` | Database health & duplicate audit | `node scripts/db_audit.js` |
+| `scripts/db_deduplicate.js` | Remove exact duplicate tracks | `node scripts/db_deduplicate.js` |
+| `scripts/db_bulk_export.js` | Full database backup to timestamped JSON | `node scripts/db_bulk_export.js` |
+| `scripts/detailed_audit.js` | Detailed view of first 12 tracks (debugging) | `node scripts/detailed_audit.js` |
 
 ## Usage in AI Chats
 
@@ -102,21 +129,31 @@ Point your agent to read `SKILL.md` or `AGENTS.md` in this directory.
 dsa-roadmap-generator-skill/
 ├── SKILL.md                    # Primary AI agent instructions
 ├── AGENTS.md                   # Universal agent compatibility
+├── GEMINI.md                   # Gemini/Antigravity-specific instructions
 ├── README.md                   # This file
-├── package.json                # Project config (zero deps)
+├── package.json                # Project config (mongoose dependency)
 ├── .cursorrules                # Cursor compatibility
 ├── .clinerules/dsa-roadmap.md  # Cline compatibility
 ├── .windsurfrules              # Windsurf compatibility
 ├── scripts/
 │   ├── fetch_problem.js        # Single problem metadata fetch
 │   ├── fetch_batch.js          # Batch fetch from URL list
-│   └── validate_track.js       # Schema validation
+│   ├── validate_track.js       # Schema validation
+│   ├── manage_tracks.js        # Full CRUD track manager CLI
+│   ├── db_audit.js             # Database health & duplicate audit
+│   ├── db_deduplicate.js       # Duplicate track removal
+│   ├── db_bulk_export.js       # Full database backup/export
+│   ├── detailed_audit.js       # Detailed track inspection (debugging)
+│   └── lib/
+│       └── models.js           # Shared Mongoose model & helpers
 ├── resources/
 │   ├── track_schema.json       # JSON Schema (draft-07)
 │   └── example_track.json      # Valid reference example
-└── examples/
-    ├── single_fetch.sh         # Single fetch demo
-    └── batch_workflow.sh       # End-to-end workflow demo
+├── examples/
+│   ├── single_fetch.sh         # Single fetch demo
+│   └── batch_workflow.sh       # End-to-end workflow demo
+├── backups/                    # Auto-generated safety backups
+└── downloads/                  # Downloaded track files
 ```
 
 ## Schema

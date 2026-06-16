@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
-import path from 'node:path';
-import fs from 'node:fs';
+import { Track, getAllProblems, getTrackSignature, getMongoUriFromEnv } from './lib/models.js';
 
 // ANSI colors
 const C_RESET = '\x1b[0m';
@@ -9,23 +8,6 @@ const C_GREEN = '\x1b[32m';
 const C_CYAN = '\x1b[36m';
 const C_YELLOW = '\x1b[33m';
 const C_RED = '\x1b[31m';
-
-const TrackSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-  order: Number,
-  problems: [{ titleSlug: String }]
-}, { timestamps: true });
-
-const Track = mongoose.models.Track || mongoose.model('Track', TrackSchema);
-
-function getMongoUriFromEnv() {
-  const envPath = path.join(process.cwd(), '.env');
-  if (!fs.existsSync(envPath)) return null;
-  const envContent = fs.readFileSync(envPath, 'utf8');
-  const match = envContent.match(/MONGODB_URI=(.+)/);
-  return match ? match[1].trim().replace(/^['"]|['"]$/g, '') : null;
-}
 
 async function run() {
   const uri = getMongoUriFromEnv();
@@ -45,8 +27,9 @@ async function run() {
   const signatures = new Map();
 
   tracks.forEach((t, i) => {
-    const slugs = t.problems.map(p => p.titleSlug).sort().join(',');
-    const signature = `${t.title}|${slugs}`;
+    // Uses shared helper — correctly includes parts[].problems[] slugs
+    const signature = getTrackSignature(t);
+    const problemCount = getAllProblems(t).length;
     
     let status = `${C_GREEN}OK${C_RESET}`;
     if (signatures.has(signature)) {
@@ -55,7 +38,7 @@ async function run() {
       signatures.set(signature, true);
     }
 
-    console.log(`${(i + 1).toString().padEnd(4)} | ${t.title.padEnd(35)} | ${t.order.toString().padEnd(5)} | ${t.problems.length.toString().padEnd(5)} | ${status}`);
+    console.log(`${(i + 1).toString().padEnd(4)} | ${t.title.padEnd(35)} | ${t.order.toString().padEnd(5)} | ${problemCount.toString().padEnd(5)} | ${status}`);
   });
 
   console.log(`\n${C_CYAN}Audit complete.${C_RESET}`);

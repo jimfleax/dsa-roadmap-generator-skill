@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
 import mongoose from 'mongoose';
+import { Track, getAllProblems, cleanDocument, getMongoUriFromEnv } from './lib/models.js';
 
 // ANSI colors for premium terminal aesthetics
 const C_RESET = '\x1b[0m';
@@ -34,36 +35,8 @@ const log = {
   red: (msg) => `${C_RED}${msg}${C_RESET}`
 };
 
-// Mongoose schema definition matching the app's models
-const ProblemSchema = {
-  title: { type: String, required: true },
-  titleSlug: { type: String, required: true },
-  difficulty: {
-    type: String,
-    enum: ['Easy', 'Medium', 'Hard'],
-    required: true,
-  },
-  url: { type: String, required: true },
-};
-
-const TrackSchema = new mongoose.Schema(
-  {
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    order: { type: Number, required: true, default: 0 },
-    problems: [ProblemSchema],
-    parts: [
-      {
-        title: { type: String, required: true },
-        description: { type: String },
-        problems: [ProblemSchema],
-      },
-    ],
-  },
-  { timestamps: true }
-);
-
-const Track = mongoose.models.Track || mongoose.model('Track', TrackSchema);
+// Track model, cleanDocument, getAllProblems, and getMongoUriFromEnv
+// are imported from ./lib/models.js (single source of truth).
 
 // Schema constraints for validation
 const VALID_DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
@@ -191,31 +164,7 @@ const rl = readline.createInterface({
 
 const ask = (query) => new Promise((resolve) => rl.question(query, resolve));
 
-// Parse custom env file to retrieve MongoDB URI without dotenv dependency
-function getMongoUriFromEnv() {
-  const envPath = path.join(process.cwd(), '.env');
-  if (!fs.existsSync(envPath)) return null;
-
-  try {
-    const envContent = fs.readFileSync(envPath, 'utf8');
-    const lines = envContent.split(/\r?\n/);
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-      const index = trimmed.indexOf('=');
-      if (index !== -1) {
-        const key = trimmed.substring(0, index).trim();
-        const val = trimmed.substring(index + 1).trim().replace(/^['"]|['"]$/g, '');
-        if (key === 'MONGODB_URI') {
-          return val;
-        }
-      }
-    }
-  } catch (err) {
-    log.warn(`Could not read .env file: ${err.message}`);
-  }
-  return null;
-}
+// getMongoUriFromEnv() is imported from ./lib/models.js
 
 // Redact password in MongoDB URI for logging
 function redactUri(uri) {
@@ -236,20 +185,8 @@ async function askConfirm(promptText) {
   }
 }
 
-// Clean fields from a document before outputting JSON
-function cleanDocument(doc) {
-  const obj = doc.toObject ? doc.toObject() : JSON.parse(JSON.stringify(doc));
-  delete obj._id;
-  delete obj.__v;
-  delete obj.createdAt;
-  delete obj.updatedAt;
-  if (Array.isArray(obj.problems)) {
-    obj.problems.forEach(p => {
-      delete p._id;
-    });
-  }
-  return obj;
-}
+// cleanDocument() is imported from ./lib/models.js
+// It now properly strips _id from parts[] and parts[].problems[] too.
 
 // Print difficulty distribution metrics
 function getDifficultyStats(problems) {
@@ -270,13 +207,7 @@ function formatStats(stats) {
 // CRUD Menu Handlers
 // ---------------------------------------------------------------------------
 
-// Helper to sum problems across flat array and parts
-function getAllProblems(track) {
-  return [
-    ...(track.problems || []),
-    ...(track.parts?.flatMap(p => p.problems) || [])
-  ];
-}
+// getAllProblems() is imported from ./lib/models.js
 
 async function handleViewTracks() {
   log.header('VIEW TRACKS');
