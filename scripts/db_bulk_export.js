@@ -8,7 +8,7 @@ async function run() {
   if (!uri) { console.error('No MONGODB_URI found in .env'); process.exit(1); }
   await mongoose.connect(uri);
   
-  const tracks = await Track.find().sort({ order: 1 });
+  const tracks = await Track.find();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const exportDir = path.resolve(`./backups/bulk_export_${timestamp}`);
   

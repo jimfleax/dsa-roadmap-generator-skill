@@ -1,0 +1,74 @@
+{
+  "title": "Reverse Traversal Monotonic Stack",
+  "description": "A heavily curated progression of LeetCode problems designed specifically to drill this right-to-left monotonic stack architecture into your muscle memory.",
+  "parts": [
+    {
+      "title": "Level 1: The Core Architecture (Understanding the Pops)",
+      "problems": [
+        {
+          "title": "Next Greater Element I",
+          "titleSlug": "next-greater-element-i",
+          "difficulty": "Easy",
+          "url": "https://leetcode.com/problems/next-greater-element-i/"
+        },
+        {
+          "title": "Final Prices With a Special Discount in a Shop",
+          "titleSlug": "final-prices-with-a-special-discount-in-a-shop",
+          "difficulty": "Easy",
+          "url": "https://leetcode.com/problems/final-prices-with-a-special-discount-in-a-shop/"
+        }
+      ]
+    },
+    {
+      "title": "Level 2: Storing Meta-Data (The Daily Temperatures Tier)",
+      "problems": [
+        {
+          "title": "Daily Temperatures",
+          "titleSlug": "daily-temperatures",
+          "difficulty": "Medium",
+          "url": "https://leetcode.com/problems/daily-temperatures/"
+        },
+        {
+          "title": "Number of Visible People in a Queue",
+          "titleSlug": "number-of-visible-people-in-a-queue",
+          "difficulty": "Hard",
+          "url": "https://leetcode.com/problems/number-of-visible-people-in-a-queue/"
+        }
+      ]
+    },
+    {
+      "title": "Level 3: Calculating Bottlenecks (The Car Fleet Tier)",
+      "problems": [
+        {
+          "title": "Car Fleet",
+          "titleSlug": "car-fleet",
+          "difficulty": "Medium",
+          "url": "https://leetcode.com/problems/car-fleet/"
+        },
+        {
+          "title": "Car Fleet II",
+          "titleSlug": "car-fleet-ii",
+          "difficulty": "Hard",
+          "url": "https://leetcode.com/problems/car-fleet-ii/"
+        }
+      ]
+    },
+    {
+      "title": "Level 4: Advanced Manipulations",
+      "problems": [
+        {
+          "title": "Next Greater Node In Linked List",
+          "titleSlug": "next-greater-node-in-linked-list",
+          "difficulty": "Medium",
+          "url": "https://leetcode.com/problems/next-greater-node-in-linked-list/"
+        },
+        {
+          "title": "Next Greater Element II",
+          "titleSlug": "next-greater-element-ii",
+          "difficulty": "Medium",
+          "url": "https://leetcode.com/problems/next-greater-element-ii/"
+        }
+      ]
+    }
+  ]
+}

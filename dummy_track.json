@@ -1,7 +1,6 @@
 {
   "title": "Dummy Test Track",
   "description": "This is a dummy track used for testing the auto-import functionality.",
-  "order": 999,
   "problems": [
     {
       "title": "Two Sum",

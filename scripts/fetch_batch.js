@@ -98,7 +98,11 @@ function extractStructure(text) {
       if (currentPart.problems.length > 0) {
         structure.push(currentPart);
       }
-      currentPart = { title: headerMatch[1].trim(), problems: [] };
+      const plainTitle = headerMatch[1]
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/[*_~`]/g, '')
+        .trim();
+      currentPart = { title: plainTitle, problems: [] };
       continue;
     }
 

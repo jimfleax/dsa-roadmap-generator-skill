@@ -29,7 +29,6 @@ const TrackSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: { type: String, required: true },
-    order: { type: Number, required: true, default: 0 },
     problems: [ProblemSchema],
     parts: [
       {

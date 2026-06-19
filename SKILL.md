@@ -41,16 +41,16 @@ zero hallucination, zero token waste on metadata resolution.
 
 ### Single Problem (Quick Lookup)
 
-- [ ] 1. User provides a LeetCode URL or slug
-- [ ] 2. Run `node scripts/fetch_problem.js <url-or-slug>`
-- [ ] 3. Use the returned JSON object directly in the track
+- [ ] User provides a LeetCode URL or slug
+- [ ] Run `node scripts/fetch_problem.js <url-or-slug>`
+- [ ] Use the returned JSON object directly in the track
 
 ### Batch Generation (Full Track)
 
-- [ ] 1. **Gather inputs** — User provides: track title, description, optional order number, and a source of problem URLs.
-- [ ] 2. **Determine Structure** — Ask: "Should this be a standalone track or a partitioned track with milestones (sub-tracks)?"
-- [ ] 3. **Validate inputs** — Run the Pre-Flight Checklist (see below)
-- [ ] 4. **Run batch fetch**:
+- [ ] **Gather inputs** — User provides: track title, description, and a source of problem URLs.
+- [ ] **Determine Structure** — Ask: "Should this be a standalone track or a partitioned track with milestones (sub-tracks)?"
+- [ ] **Validate inputs** — Run the Pre-Flight Checklist (see below)
+- [ ] **Run batch fetch**:
     - For flat tracks: `node scripts/fetch_batch.js ./urls.md > problems.json`
     - For partitioned tracks: `node scripts/fetch_batch.js ./urls.md --parts > parts.json`
 - [ ] 5. **Check for failures** — If `_failures.json` exists, report to user for resolution.
@@ -122,7 +122,6 @@ Before generating ANY output, verify ALL of the following. If any check fails, *
 |---|-------|-------------------|
 | 1 | Track `title` is provided | Ask: "What should this track be called?" |
 | 2 | Track `description` is provided | Ask: "Provide a short description for this track." |
-| 3 | Track `order` (optional) | Optional. Will be auto-assigned if missing. |
 | 4 | Structure preference | Ask: "Standalone or with milestones (sub-tracks)?" |
 | 5 | At least 1 problem URL is provided | Ask: "Please provide the LeetCode problem URLs." |
 | 6 | Node.js 18+ is available | Run: `node --version` to confirm |
@@ -137,7 +136,6 @@ Before generating ANY output, verify ALL of the following. If any check fails, *
 {
   "title": "string — required",
   "description": "string — required",
-  "order": "integer — optional",
   "problems": "array — optional (flat list)",
   "parts": "array — optional (hierarchical list)"
 }
@@ -280,8 +278,7 @@ When something goes wrong, follow this decision tree:
 | Uppercase in slug | `"Two-Sum"` | Use `"two-sum"` |
 | Underscores in slug | `"two_sum"` | Use `"two-sum"` |
 | URL has `/description/` suffix | `".../two-sum/description/"` | Strip to `".../two-sum/"` |
-| `order` is a string | `"1"` | Use `1` (number) |
-| `order` is a float | `1.5` | Use integer `1` or `2` |
+
 | Empty problems array | `[]` | Must have ≥ 1 problem |
 | Guessed/abbreviated title | `"2 Sum"` | Use the script to fetch official title |
 | Extra fields included | `"tags": [...]` | Remove — not in schema |

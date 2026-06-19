@@ -145,19 +145,6 @@ function validateTrack(track) {
     errors.push({ path: 'description', message: 'Must not be empty or whitespace-only.', severity: 'error' });
   }
 
-  // --- order ---
-  if (track.order === undefined || track.order === null) {
-    errors.push({ 
-      path: 'order', 
-      message: 'Missing. Will be auto-assigned (count + 1) during import.', 
-      severity: 'warning' 
-    });
-  } else if (typeof track.order !== 'number' || !Number.isInteger(track.order)) {
-    errors.push({ path: 'order', message: `Must be an integer, got: ${JSON.stringify(track.order)}`, severity: 'error' });
-  } else if (track.order < 0) {
-    errors.push({ path: 'order', message: `Must be >= 0, got: ${track.order}`, severity: 'error' });
-  }
-
   // --- Check if problems OR parts exist ---
   const hasProblems = Array.isArray(track.problems) && track.problems.length > 0;
   const hasParts = Array.isArray(track.parts) && track.parts.length > 0;

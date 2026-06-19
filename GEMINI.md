@@ -35,7 +35,6 @@ This project is a specialized **AI Agent Skill** for generating and managing dat
 
 ### 🛡️ Safety & Reliability
 - **Idempotent Imports:** The `manage_tracks.js --import` command uses **upsert logic** based on the track `title`. It is safe to retry imports if a connection fails.
-- **Dynamic Ordering:** If the `order` field is missing from a track JSON, the system auto-assigns `current_track_count + 1`.
 - **Test Data Standards:** Tracks created for verification MUST start with the `[TEST] ` prefix in the title and include a descriptive testing purpose in the description.
 
 ### 🧩 Source Code Standards

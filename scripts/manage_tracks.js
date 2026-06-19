@@ -113,10 +113,6 @@ function validateTrackData(track) {
     errors.push('Missing or empty "description".');
   }
 
-  if (track.order === undefined || track.order === null) {
-    errors.push('Missing "order" field.');
-  } else if (typeof track.order !== 'number' || !Number.isInteger(track.order) || track.order < 0) {
-    errors.push(`"order" must be a non-negative integer, got: ${JSON.stringify(track.order)}`);
   }
 
   const hasProblems = Array.isArray(track.problems) && track.problems.length > 0;
@@ -212,7 +208,7 @@ function formatStats(stats) {
 async function handleViewTracks() {
   log.header('VIEW TRACKS');
   try {
-    const tracks = await Track.find().sort({ order: 1 });
+    const tracks = await Track.find();
     if (tracks.length === 0) {
       log.info('No tracks found in the database.');
       return;
@@ -223,7 +219,6 @@ async function handleViewTracks() {
       const t = tracks[i];
       const allProbs = getAllProblems(t);
       const stats = getDifficultyStats(allProbs);
-      console.log(`${C_BOLD}${i + 1}. ${t.title}${C_RESET} (Order: ${t.order})`);
       console.log(`   Description: ${t.description}`);
       console.log(`   Problems: ${log.accent(allProbs.length)} [${formatStats(stats)}]`);
       if (t.parts?.length > 0) {
@@ -272,7 +267,6 @@ async function handleAddTrack() {
     log.info(`Valid Track JSON Loaded!`);
     console.log(`  Title:       ${log.accent(trackData.title)}`);
     console.log(`  Description: ${trackData.description}`);
-    console.log(`  Order:       ${trackData.order}`);
     console.log(`  Problems:    ${log.accent(allProbs.length)} [${formatStats(stats)}]`);
     if (trackData.parts?.length > 0) {
       console.log(`  Parts:       ${log.cyan(trackData.parts.length)}`);
@@ -296,7 +290,7 @@ async function handleAddTrack() {
 async function handleEditTrack() {
   log.header('EDIT TRACK');
   try {
-    const tracks = await Track.find().sort({ order: 1 });
+    const tracks = await Track.find();
     if (tracks.length === 0) {
       log.info('No tracks found in the database to edit.');
       return;
@@ -305,7 +299,6 @@ async function handleEditTrack() {
     console.log('\nSelect a track to edit:\n');
     tracks.forEach((t, index) => {
       const allProbs = getAllProblems(t);
-      console.log(`  [${index + 1}] ${t.title} (Order: ${t.order}, Problems: ${allProbs.length})`);
     });
     console.log('  [0] Cancel');
 
@@ -366,8 +359,6 @@ async function handleEditTrack() {
     if (selectedTrack.description !== updatedData.description) {
       console.log(`  Description:  Changed`);
     }
-    if (selectedTrack.order !== updatedData.order) {
-      console.log(`  Order:        ${selectedTrack.order} -> ${log.accent(updatedData.order)}`);
     }
     console.log(`  Problems:     ${originalProblems.length} -> ${log.accent(newProblems.length)}`);
 
@@ -396,7 +387,7 @@ async function handleEditTrack() {
 async function handleDownloadTracks() {
   log.header('DOWNLOAD TRACKS');
   try {
-    const tracks = await Track.find().sort({ order: 1 });
+    const tracks = await Track.find();
     if (tracks.length === 0) {
       log.info('No tracks found to download.');
       return;
@@ -462,7 +453,7 @@ async function handleDownloadTracks() {
 async function handleDeleteTrack() {
   log.header('DELETE TRACK');
   try {
-    const tracks = await Track.find().sort({ order: 1 });
+    const tracks = await Track.find();
     if (tracks.length === 0) {
       log.info('No tracks found to delete.');
       return;
@@ -669,10 +660,7 @@ async function autoImportTrack(filePath, skipConfirm) {
     }
 
     // Auto-assign order if missing
-    if (trackData.order === undefined || trackData.order === null) {
       const count = await Track.countDocuments();
-      trackData.order = count + 1;
-      log.info(`Order field missing. Auto-assigned order: ${trackData.order}`);
     }
 
     const errors = validateTrackData(trackData);
@@ -687,7 +675,6 @@ async function autoImportTrack(filePath, skipConfirm) {
     log.info(`Valid Track JSON Loaded!`);
     console.log(`  Title:       ${log.accent(trackData.title)}`);
     console.log(`  Description: ${trackData.description}`);
-    console.log(`  Order:       ${trackData.order}`);
     console.log(`  Problems:    ${log.accent(allProbs.length)} [${formatStats(stats)}]`);
     if (trackData.parts?.length > 0) {
       console.log(`  Parts:       ${log.cyan(trackData.parts.length)}`);
@@ -797,7 +784,7 @@ async function autoDownloadTracks(args) {
     }
 
     if (targetTitle === 'ALL' || targetTitle === '*') {
-      const tracks = await Track.find().sort({ order: 1 });
+      const tracks = await Track.find();
       if (tracks.length === 0) {
         log.info('No tracks found to download.');
         return true;

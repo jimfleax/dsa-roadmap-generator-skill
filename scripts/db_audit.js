@@ -16,13 +16,13 @@ async function run() {
   console.log(`${C_CYAN}ℹ Connecting to database...${C_RESET}`);
   await mongoose.connect(uri);
   
-  const tracks = await Track.find().sort({ order: 1 });
+  const tracks = await Track.find();
   
   console.log(`\n${C_BOLD}--- DSA ROADMAP DATABASE AUDIT ---${C_RESET}`);
   console.log(`Total Tracks: ${C_BOLD}${tracks.length}${C_RESET}\n`);
 
-  console.log(`${C_BOLD}${'#'.padEnd(4)} | ${'Track Title'.padEnd(35)} | ${'Order'.padEnd(5)} | ${'Probs'.padEnd(5)} | ${'Status'}${C_RESET}`);
-  console.log('-'.repeat(70));
+  console.log(`${C_BOLD}${'#'.padEnd(4)} | ${'Track Title'.padEnd(35)} | ${'Probs'.padEnd(5)} | ${'Status'}${C_RESET}`);
+  console.log('-'.repeat(60));
 
   const signatures = new Map();
 
@@ -38,7 +38,7 @@ async function run() {
       signatures.set(signature, true);
     }
 
-    console.log(`${(i + 1).toString().padEnd(4)} | ${t.title.padEnd(35)} | ${t.order.toString().padEnd(5)} | ${problemCount.toString().padEnd(5)} | ${status}`);
+    console.log(`${(i + 1).toString().padEnd(4)} | ${t.title.padEnd(35)} | ${problemCount.toString().padEnd(5)} | ${status}`);
   });
 
   console.log(`\n${C_CYAN}Audit complete.${C_RESET}`);

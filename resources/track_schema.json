@@ -17,11 +17,6 @@
       "minLength": 1,
       "description": "A brief description of this track (1-2 sentences)."
     },
-    "order": {
-      "type": "integer",
-      "minimum": 0,
-      "description": "Display sort order in the UI. Lower numbers appear first."
-    },
     "problems": {
       "type": "array",
       "description": "Flat array of LeetCode problem objects (for simple tracks).",

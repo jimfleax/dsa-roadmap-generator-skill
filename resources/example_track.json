@@ -1,7 +1,6 @@
 {
   "title": "Example Track",
   "description": "A small example track demonstrating the correct schema format.",
-  "order": 1,
   "problems": [
     {
       "title": "Two Sum",
