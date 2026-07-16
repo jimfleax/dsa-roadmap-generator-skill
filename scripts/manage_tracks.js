@@ -113,8 +113,6 @@ function validateTrackData(track) {
     errors.push('Missing or empty "description".');
   }
 
-  }
-
   const hasProblems = Array.isArray(track.problems) && track.problems.length > 0;
   const hasParts = Array.isArray(track.parts) && track.parts.length > 0;
 
@@ -358,7 +356,6 @@ async function handleEditTrack() {
     }
     if (selectedTrack.description !== updatedData.description) {
       console.log(`  Description:  Changed`);
-    }
     }
     console.log(`  Problems:     ${originalProblems.length} -> ${log.accent(newProblems.length)}`);
 
@@ -659,9 +656,7 @@ async function autoImportTrack(filePath, skipConfirm) {
       return false;
     }
 
-    // Auto-assign order if missing
-      const count = await Track.countDocuments();
-    }
+    // Auto-assign order if missing (no-op, removed feature)
 
     const errors = validateTrackData(trackData);
     if (errors.length > 0) {
